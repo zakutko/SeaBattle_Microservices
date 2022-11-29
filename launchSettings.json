@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "composeLaunchAction": "LaunchBrowser",
+        "composeLaunchServiceName": "seabattle.api",
+      "composeLaunchUrl": "{Scheme}://{ServiceIPAddress}{ServicePort}/swagger",
+        "serviceActions": {
+            "game.api": "StartDebugging",
+            "gamehistory.api": "StartDebugging",
+            "identity.api": "StartDebugging",
+            "seabattle.api": "StartDebugging"
+        }
+    }
+  }
+}

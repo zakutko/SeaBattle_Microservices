@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <BaseOutputPath>C:\Projects\SeaBattle_Services_Oriented\SeaBattle_Microservices\packages</BaseOutputPath>
+    <Version>1.0.37</Version>
+  </PropertyGroup>
+
+</Project>

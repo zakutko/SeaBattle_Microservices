@@ -1,0 +1,71 @@
+version: '3.4'
+
+services:
+  seabattle.api:
+    container_name: SeaBattle-API
+    image: ${DOCKER_REGISTRY-}seabattleapi
+    build:
+      context: .
+      dockerfile: SeaBattle.API/Dockerfile
+    ports:
+        - 5001:80
+    depends_on:
+        - rabbitmq
+
+
+  game.api:
+    container_name: Game-Microservice
+    image: ${DOCKER_REGISTRY-}gameapi
+    build:
+      context: .
+      dockerfile: src/Services/Game/Game.API/Dockerfile
+    depends_on:
+        - rabbitmq
+        - app_db
+    environment: 
+        - DB_CONNECTION_STRING=Server=host.docker.internal, 1433;Database=SeaBattle_DB;User Id=serhii;Password=Sql_Passw@rd;TrustServerCertificate=True
+
+
+  gamehistory.api:
+    container_name: GameHistory-Microservice
+    image: ${DOCKER_REGISTRY-}gamehistoryapi
+    build:
+      context: .
+      dockerfile: src/Services/GameHistory/GameHistory.API/Dockerfile
+    depends_on:
+        - rabbitmq
+        - app_db
+    environment: 
+        - DB_CONNECTION_STRING=Server=host.docker.internal, 1433;Database=SeaBattle_DB;User Id=serhii;Password=Sql_Passw@rd;TrustServerCertificate=True
+  
+        
+  identity.api:
+    container_name: Identity-Microservice
+    image: ${DOCKER_REGISTRY-}identityapi
+    build:
+      context: .
+      dockerfile: src/Services/Identity/Identity.API/Dockerfile
+    depends_on:
+        - rabbitmq
+        - app_db
+    environment: 
+        - DB_CONNECTION_STRING=Server=host.docker.internal, 1433;Database=SeaBattle_DB;User Id=serhii;Password=Sql_Passw@rd;TrustServerCertificate=True
+
+
+  rabbitmq:
+    container_name: RabbitMQ
+    image: "rabbitmq:3-management"
+    ports:
+        - 5672:5672
+        - 15672:15672
+
+
+  app_db:
+    container_name: App-Db
+    image: mcr.microsoft.com/mssql/server
+    ports:
+        - "1433:1433"
+    environment:
+        - ACCEPT_EULA=Y
+        - Id=serhii
+        - PASSWORD=Sql_Passw@rd

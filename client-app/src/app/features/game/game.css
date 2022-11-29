@@ -1,0 +1,208 @@
+.plug{
+    height: 70px;
+    display: flex;
+    justify-content: right;
+    align-items: center;
+}
+
+.plug .deleteGameBtn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.prepareGame {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 10px 10px 0px;
+    margin-bottom: 5px;
+    
+    border-radius:2px;
+    border-left: 2px solid #f5f5f7;
+    border-bottom: 2px solid #f5f5f7;
+    border-right: 2px solid #adc0bc;
+    border-top: 2px solid #f4f4f6;
+
+    background-color: white;
+
+    box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
+}
+
+.fieldForm {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.form {
+    display: block;
+}
+
+.form-input {
+    width: 100px;
+}
+
+.prepareGameButton {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding-top: 20px;
+}
+
+.gameList {
+    padding-top: 160px;
+}
+
+.game {
+    padding: 0px 25px 25px 0px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+
+    border-radius:2px;
+    border-left: 2px solid #f5f5f7;
+    border-bottom: 2px solid #f5f5f7;
+    border-right: 2px solid #adc0bc;
+    border-top: 2px solid #f4f4f6;
+
+    background-color: white;
+
+    box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
+}
+
+.help-colors {
+    padding-top: 5px;
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 10px;
+}
+
+.block {
+    width: 75px;
+    height: 30px;
+    border: 1px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.block p {
+    color: white;
+}
+
+.color-purple {
+    background-color: purple;
+}
+
+.color-orange {
+    background-color: orange;
+}
+
+.color-red {
+    background-color: red;
+}
+
+.gameFieldForm {
+    display: flex;
+    justify-content: center;
+}
+
+.gameFieldForm .waiting {
+    position: relative;
+    padding-top: 25px;
+
+    font-weight: 700;
+    text-align: center;
+    font-size: 40px;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+
+    background: linear-gradient(90deg, #000, rgb(99, 99, 99), #000);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-repeat: no-repeat;
+    background-size: 80%;
+
+    animation: shine 5s linear infinite;
+}
+
+@keyframes shine {
+    0% {
+      background-position-x: -500%;
+    }
+    100% {
+      background-position-x: 500%;
+    }
+}
+
+.endOfTheGame {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding-top: 50px;
+}
+
+.winner {
+    color: red;
+}
+
+#card {
+    max-width: 45%;
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 10px;
+    padding: 10px;
+
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;
+}
+
+.gameList .createGameBtn {
+    margin-bottom: 20px;
+}
+
+.gameList .cards {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.gameList .cards .card .card-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gameHistoryTable {
+    padding-top: 70px;
+}
+
+.prepareGameButton .prepareGameBtn {
+    background-color: red;
+    color: white;
+}
+
+.endOfTheGame .header {
+    color: white;
+}
+
+input {
+    background: #f2f2f2;
+    border: 0;
+    border-radius: 5px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.error-container {
+    width: 50%;
+}
+
+p.error {
+    text-align: left;
+    font-size: 10px;
+    color: red;
+    margin-bottom: -10px;
+}

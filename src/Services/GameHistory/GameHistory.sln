@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameHistory.API", "GameHistory.API\GameHistory.API.csproj", "{32E14B58-9B2B-4C5A-B705-F2E779D64518}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameHistory.BLL", "GameHistory.BLL\GameHistory.BLL.csproj", "{2984832F-ECCC-4FDA-A885-A9472A0E35CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameHistory.DAL", "GameHistory.DAL\GameHistory.DAL.csproj", "{D6A76E75-1607-4EB1-A24F-5D1314DE217B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{32E14B58-9B2B-4C5A-B705-F2E779D64518}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32E14B58-9B2B-4C5A-B705-F2E779D64518}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32E14B58-9B2B-4C5A-B705-F2E779D64518}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32E14B58-9B2B-4C5A-B705-F2E779D64518}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2984832F-ECCC-4FDA-A885-A9472A0E35CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2984832F-ECCC-4FDA-A885-A9472A0E35CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2984832F-ECCC-4FDA-A885-A9472A0E35CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2984832F-ECCC-4FDA-A885-A9472A0E35CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6A76E75-1607-4EB1-A24F-5D1314DE217B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6A76E75-1607-4EB1-A24F-5D1314DE217B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6A76E75-1607-4EB1-A24F-5D1314DE217B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6A76E75-1607-4EB1-A24F-5D1314DE217B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,67 @@
+.login-register {
+    width: 360px;
+    padding: 8% 0 0;
+    margin: auto;
+    box-shadow: rgba(0, 0, 0, 0.4) 0px 4px 6px, rgba(0, 0, 0, 0.3) 0px 9px 15px -3px, rgba(0, 0, 0, 0.2) 0px -3px 0px inset;
+}
+
+.login-register .form {
+    position: relative;
+    z-index: 1;
+    background: #FFFFFF;
+    border-radius: 10px;
+    max-width: 360px;
+    margin: 0 auto 100px;
+    padding: 45px;
+    text-align: center;
+}
+
+.login-register .form input {
+    outline: 0;
+    background: #f2f2f2;
+    width: 100%;
+    border: 0;
+    border-radius: 5px;
+    margin: 0 0 15px;
+    padding: 15px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.login-register .form input:focus {
+    background: #dbdbdb;
+}
+
+.login-register .form button {
+    text-transform: uppercase;
+    outline: 0;
+    background: rgb(169 75 227);
+    width: 100%;
+    border: 0;
+    border-radius: 5px;
+    padding: 15px;
+    color: #FFFFFF;
+    font-size: 14px;
+    -webkit-transition: all 0.3 ease;
+    transition: all 0.3 ease;
+    cursor: pointer;
+}
+
+.login-register .form button:active {
+    background: rgb(169 75 227);
+}
+
+.login-register .form span {
+    font-weight: 700;
+    font-size: 40px;
+    color: rgb(169 75 227);
+    margin-bottom: 25px;
+    display: block;
+}
+
+.login-register .form p.error {
+    margin: 0 0 10px 10px;
+    text-align: left;
+    font-size: 10px;
+    color: red;
+}

@@ -1,0 +1,13 @@
+.home {
+    display: flex;
+    align-items: center;
+    padding-top: 160px;
+}
+
+.login-register-form {
+    padding-top: 50px;
+}
+
+.home .home-register-text{
+    color: white;
+}
