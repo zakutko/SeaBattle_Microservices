@@ -18,7 +18,6 @@ namespace Identity.BLL.Services
                 new Claim(ClaimTypes.Email, user.Email)
             };
 
-
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("serge project key"));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
@@ -30,7 +29,6 @@ namespace Identity.BLL.Services
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
-
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             return tokenHandler.WriteToken(token);

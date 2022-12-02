@@ -17,7 +17,7 @@ namespace Identity.API.MassTransit
         {
             var result = await _identityService.Register(context.Message);
 
-            await context.RespondAsync<UserResponse>(new { result.Token, result.Username }); 
+            await context.RespondAsync(result); 
         }
     }
 }

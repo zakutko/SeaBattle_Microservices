@@ -19,14 +19,7 @@ namespace GameHistory.BLL.Services
         public IEnumerable<GameHistoryResponse> GetAllGameHistories(GameHistoryRequest gameHistoryRequest)
         {
             var gameHistoryList = _unitOfWork.GameHistoryRepository.GetAllAsync().Result.Reverse();
-            var gameHistoryResponseList = new List<GameHistoryResponse>();
-
-            foreach (var gameHistory in gameHistoryList)
-            {
-                gameHistoryResponseList.Add(_mapper.Map<GameHistoryResponse>(gameHistory));
-            }
-
-            return(gameHistoryResponseList);
+            return (gameHistoryList.Select(gameHistory => _mapper.Map<GameHistoryResponse>(gameHistory))).ToList();
         }
 
         public TopPlayersResponse GetTopPlayers(TopPlayersRequest topPlayersRequest)

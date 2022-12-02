@@ -38,7 +38,7 @@ namespace SeaBattle.API.Controllers
         {
             try
             {
-                var topPlayersRequest = new TopPlayersRequest { Message = "Get all games history!" };
+                var topPlayersRequest = new TopPlayersRequest { Message = "Get top players!" };
                 var response = await _bus.Request<TopPlayersRequest, TopPlayersResponse>(topPlayersRequest);
                 return Ok(response.Message);
             }

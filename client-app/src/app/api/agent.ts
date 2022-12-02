@@ -9,7 +9,7 @@ import { TopPlayers } from "../models/topPlayers";
 import { User, UserFormValues } from "../models/user";
 import { store } from "../stores/store";
 
-axios.defaults.baseURL = 'https://localhost:53034/api';
+axios.defaults.baseURL = 'https://localhost:58753/api';
 
 axios.defaults.headers.common['Authorization'] = `Bearer ${store.commonStore.token}`;
 

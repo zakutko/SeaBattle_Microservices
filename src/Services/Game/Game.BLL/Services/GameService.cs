@@ -48,18 +48,9 @@ namespace Game.BLL.Services
                 });
             }
 
-            var playerGameResponseListWithoutCurrUser = new List<GameListResponse>();
-
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(gameListRequest.Token);
 
-            foreach (var playerGame in playerGameResponseList)
-            {
-                if (playerGame.FirstPlayer != username && playerGame.SecondPlayer != username)
-                {
-                    playerGameResponseListWithoutCurrUser.Add(playerGame);
-                }
-            }
-
+            var playerGameResponseListWithoutCurrUser = playerGameResponseList.Where(playerGame => playerGame.FirstPlayer != username && playerGame.SecondPlayer != username);
             return playerGameResponseListWithoutCurrUser;
         }
         
@@ -106,12 +97,7 @@ namespace Game.BLL.Services
                 _unitOfWork.ShipWrapperRepository.Create(defaultShipWrapper);
                 _unitOfWork.Commit();
 
-                var defaultPositions = new List<Position>();
-                foreach (var cell in defaultCells)
-                {
-                    defaultPositions.Add(new Position { ShipWrapperId = defaultShipWrapper.Id, CellId = cell.Id });
-                }
-
+                var defaultPositions = defaultCells.Select(cell => new Position { ShipWrapperId = defaultShipWrapper.Id, CellId = cell.Id });
                 foreach (var position in defaultPositions)
                 {
                     _unitOfWork.PositionRepository.Create(position);
@@ -296,11 +282,7 @@ namespace Game.BLL.Services
                 _unitOfWork.ShipWrapperRepository.Create(defaultShipWrapper);
                 _unitOfWork.Commit();
 
-                var defaultPositions = new List<Position>();
-                foreach (var cell in defaultCells)
-                {
-                    defaultPositions.Add(new Position { ShipWrapperId = defaultShipWrapper.Id, CellId = cell.Id });
-                }
+                var defaultPositions = (defaultCells.Select(cell => new Position { ShipWrapperId = defaultShipWrapper.Id, CellId = cell.Id })).ToList();
 
                 foreach (var position in defaultPositions)
                 {
@@ -318,14 +300,9 @@ namespace Game.BLL.Services
             var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == playerId).Result.Id;
             var cellList = _gameServiceHelper.GetCellList(fieldId).OrderBy(x => x.Id).ToList();
 
-            var cellListResponse = new List<CellListResponse>();
-            foreach (var cell in cellList)
-            {
-                cellListResponse.Add(_mapper.Map<CellListResponse>(cell));
-            }
-            return cellListResponse;
+            return cellList.Select(cell => _mapper.Map<CellListResponse>(cell)).ToList();
         }
-        //Пересмотреть этот метод!
+
         public void CreateShipOnField(CreateShipRequest createShipRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(createShipRequest.Token);
@@ -340,11 +317,8 @@ namespace Game.BLL.Services
             }
 
             var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-            var ships = new List<Ship>();
-            foreach (var shipWrapperItem in shipWrappers)
-            {
-                ships.AddRange(_unitOfWork.ShipRepository.GetAllAsync(x => x.Id == shipWrapperItem.ShipId).Result);
-            }
+
+            var ships = shipWrappers.SelectMany(shipWrapperItem => _unitOfWork.ShipRepository.GetAllAsync(x => x.Id == shipWrapperItem.ShipId).Result);
 
             var numberOfShipsWhereSizeOne = ships.Where(x => x.ShipSizeId == 1).Count();
             var numberOfShipsWhereSizeTwo = ships.Where(x => x.ShipSizeId == 2).Count();
@@ -406,22 +380,9 @@ namespace Game.BLL.Services
                     try
                     {
                         var shipWrappersResult = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-                        var positionsResult = new List<Position>();
-                        foreach (var shipWrapperItem in shipWrappersResult)
-                        {
-                            positionsResult.AddRange(_unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperItem.Id).Result);
-                        }
-
-                        var cellIdsResult = new List<int>();
-                        foreach (var position in positionsResult)
-                        {
-                            cellIdsResult.Add(position.CellId);
-                        }
-                        var cells = new List<Cell>();
-                        foreach (var id in cellIdsResult)
-                        {
-                            cells.Add(_unitOfWork.CellRepository.GetAsync(x => x.Id == id).Result);
-                        }
+                        var positionsResult = shipWrappersResult.SelectMany(shipWrapperItem => _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperItem.Id).Result);
+                        var cellIdsResult = positionsResult.Select(position => position.CellId);
+                        var cells = cellIdsResult.Select(id => _unitOfWork.CellRepository.GetAsync(x => x.Id == id).Result);
 
                         //update cells in Cell table
                         var cellId = cells.Where(x => x.X == cell.X && x.Y == cell.Y).FirstOrDefault().Id;
@@ -550,11 +511,8 @@ namespace Game.BLL.Services
 
             var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
             var cellList = _gameServiceHelper.GetCellList(fieldId);
+            cellListResponse.AddRange(cellList.Select(cell => _mapper.Map<CellListResponseForSecondPlayer>(cell)));
 
-            foreach (var cell in cellList)
-            {
-                cellListResponse.Add(_mapper.Map<CellListResponseForSecondPlayer>(cell));
-            }
             return cellListResponse.OrderBy(x => x.Id);
         }
         
@@ -593,12 +551,7 @@ namespace Game.BLL.Services
             {
                 var shipWrapperId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == myCell.Id).Result.ShipWrapperId;
                 var positionsByShipWrapperId = _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperId).Result;
-                var cellsByCellIds = new List<Cell>();
-                foreach (var position in positionsByShipWrapperId)
-                {
-                    cellsByCellIds.Add(_unitOfWork.CellRepository.GetAsync(position.CellId).Result);
-                }
-
+                var cellsByCellIds = positionsByShipWrapperId.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result);
                 var isDestroyed = cellsByCellIds.Where(x => x.CellStateId == 2).Count() > 1 ? false : true;
 
                 var newCell = _gameServiceHelper.CreateNewCell(myCell.Id, myCell.X, myCell.Y, myCell.CellStateId, false);

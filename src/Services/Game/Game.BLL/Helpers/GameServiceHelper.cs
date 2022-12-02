@@ -104,35 +104,17 @@ namespace Game.BLL.Helpers
 
         public IEnumerable<Cell> GetCellList(int fieldId)
         {
-            var resultList = new List<Cell>();
-            var ships = new List<Ship>();
-            var positions = new List<Position>();
-
             var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-
-            foreach (var shipWrapper in shipWrappers)
-            {
-                positions.AddRange(_unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapper.Id).Result);
-            }
-
-            foreach (var position in positions)
-            {
-                resultList.Add(_unitOfWork.CellRepository.GetAsync(position.CellId).Result);
-            }
+            var positions = shipWrappers.SelectMany(shipWrapper => _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapper.Id).Result);
+            var resultList = positions.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result);
 
             return resultList;
         }
 
         public IEnumerable<Ship> GetShipList(int fieldId)
         {
-            var resultList = new List<Ship>();
-
             var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-            
-            foreach (var shipWrapper in shipWrappers)
-            {
-                resultList.Add(_unitOfWork.ShipRepository.GetAsync(shipWrapper.ShipId).Result);
-            }
+            var resultList = shipWrappers.Select(shipWrapper => _unitOfWork.ShipRepository.GetAsync(shipWrapper.ShipId).Result);
 
             return resultList;
         }
@@ -156,17 +138,8 @@ namespace Game.BLL.Helpers
 
             var positionsDefault = _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperDefault.Id).Result;
 
-            var cellIds = new List<int>();
-            foreach (var position in positionsDefault)
-            {
-                cellIds.Add(position.CellId);
-            }
-
-            var cellList = new List<Cell>();
-            foreach (var cellId in cellIds)
-            {
-                cellList.Add(_unitOfWork.CellRepository.GetAsync(cellId).Result);
-            }
+            var cellIds = positionsDefault.Select(position => position.CellId);
+            var cellList = cellIds.Select(cellId => _unitOfWork.CellRepository.GetAsync(cellId).Result);
 
             for (int i = 0; i < shipSize; i++)
             {
@@ -245,15 +218,8 @@ namespace Game.BLL.Helpers
                                 break;
                         };
                     }
-                    var newArroundList = new List<Cell>();
-                    foreach (var arroundNewCell in aroundNewCells)
-                    {
-                        if (!(arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10))
-                        {
-                            newArroundList.Add(arroundNewCell);
-                        }
-                    }
-
+                    var newArroundList = aroundNewCells.Where(arroundNewCell => !(arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10));
+                    
                     if (!cellList.Any())
                     {
                         cellListResult.Add(newCell);
@@ -360,15 +326,7 @@ namespace Game.BLL.Helpers
                         };
                     }
 
-                    var newArroundList = new List<Cell>();
-                    foreach (var arroundNewCell in aroundNewCells)
-                    {
-                        if (arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10)
-                        {
-                            continue;
-                        }
-                        newArroundList.Add(arroundNewCell);
-                    }
+                    var newArroundList = aroundNewCells.Where(arroundNewCell => !(arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10));
 
                     if (!cellList.Any())
                     {
