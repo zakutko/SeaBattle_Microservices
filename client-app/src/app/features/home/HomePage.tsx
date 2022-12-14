@@ -9,7 +9,7 @@ export default observer(function HomePage(){
     const{userStore} = useStore();
     
     return (
-            <Container textAlign="center" className="home">
+            <Container textAlign="center" className="home" data-testid="homePage">
                 <Header as={'h1'} size='huge' inverted color='purple'>
                     Welcome to my sea battle game!
                 </Header>

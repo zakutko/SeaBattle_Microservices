@@ -43,7 +43,7 @@ export default observer(function LoginForm()
                     errors,
                     isSubmitting
                 }) => (
-                    <div className="login-register">
+                    <div className="login-register" data-testid="form">
                         <div className="form">
                             <form noValidate onSubmit={handleSubmit}>
                                 <span>Login</span>
@@ -80,7 +80,7 @@ export default observer(function LoginForm()
                                             style={{ marginBottom: 10 }} basic color='red' content={errors.error}
                                         />}
                                 />
-                                <button type="submit" disabled={isSubmitting}>Login</button>
+                                <button type="submit" disabled={isSubmitting} data-testid="button">Login</button>
                             </form>
                         </div>
                     </div>

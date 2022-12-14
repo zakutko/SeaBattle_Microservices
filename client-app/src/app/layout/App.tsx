@@ -1,12 +1,12 @@
 import { observer } from 'mobx-react'
 import { useEffect } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Router, Routes } from 'react-router-dom';
 import Game from '../features/game/Game';
 import GameHistoryList from '../features/game/GameHistoryList';
 import GameList from '../features/game/GameList';
 import PrepareGame from '../features/game/PrepareGame';
 import HomePage from '../features/home/HomePage';
-import LoginForm from '../features/users/LoginFrom';
+import LoginForm from '../features/users/LoginForm';
 import RegisterForm from '../features/users/RegisterForm';
 import { useStore } from '../stores/store';
 import "./style.css";
