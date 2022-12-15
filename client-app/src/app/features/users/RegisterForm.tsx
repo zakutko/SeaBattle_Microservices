@@ -52,7 +52,7 @@ export default observer(function RegisterForm() {
         }) => (
             <div className="login-register">
                 <div className="form">
-                    <form noValidate onSubmit={handleSubmit}>
+                    <form noValidate onSubmit={handleSubmit} id="register-form">
                         <span>Register</span>
 
                         <input
@@ -104,6 +104,7 @@ export default observer(function RegisterForm() {
                             value={values.password}
                             placeholder="Enter password"
                             className="form-control"
+                            id="password"
                         />
                         <p className="error">
                             <ErrorMessage name="password"></ErrorMessage>
@@ -115,12 +116,11 @@ export default observer(function RegisterForm() {
                                 style={{marginBottom: 10}} basic color='red' content={errors.error} 
                             />}  
                         />
-                        <button type="submit" disabled={isSubmitting}>Register</button>
+                        <button type="submit" disabled={isSubmitting} id="register-button">Register</button>
                     </form>
                 </div>
             </div>
         )}
-
         </Formik>
         </>
     )

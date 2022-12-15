@@ -43,9 +43,9 @@ export default observer(function LoginForm()
                     errors,
                     isSubmitting
                 }) => (
-                    <div className="login-register" data-testid="form">
+                    <div className="login-register">
                         <div className="form">
-                            <form noValidate onSubmit={handleSubmit}>
+                            <form noValidate onSubmit={handleSubmit} id="login-form">
                                 <span>Login</span>
 
                                 <input
@@ -80,12 +80,11 @@ export default observer(function LoginForm()
                                             style={{ marginBottom: 10 }} basic color='red' content={errors.error}
                                         />}
                                 />
-                                <button type="submit" disabled={isSubmitting} data-testid="button">Login</button>
+                                <button type="submit" disabled={isSubmitting} id="button">Login</button>
                             </form>
                         </div>
                     </div>
                 )}
-
             </Formik>
         </>
     )

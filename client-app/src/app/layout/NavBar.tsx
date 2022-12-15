@@ -12,17 +12,17 @@ export default observer(function NavBar() {
         <Menu inverted fixed='top' tabular id="navbar">
             <Container>
                 <Menu.Item header as={Link} to='/'>
-                    <img src="/assets/logo.png" alt='logo' style={{height: 40, width: 120, paddingRight: 20}}/>
+                    <img id="logo-img" src="/assets/logo.png" alt='logo' style={{height: 40, width: 120, paddingRight: 20}}/>
                     MySeaBattle
                 </Menu.Item>
                 <Menu.Item>
-                    <Button className="navbar-btn" as={Link} to='/gameList'>Games</Button>
+                    <Button id="games-btn" className="navbar-btn" as={Link} to='/gameList'>Games</Button>
                 </Menu.Item>
                 <Menu.Item>
-                    <Button className="navbar-btn" as={Link} to='/gameHistoryList'>History</Button>
+                    <Button id="history-btn" className="navbar-btn" as={Link} to='/gameHistoryList'>History</Button>
                 </Menu.Item>
                 <Menu.Item position="right">
-                    <Button onClick={() => {logout(); navigate("/")}} color='grey'>Logout</Button>
+                    <Button id="logout-btn" onClick={() => {logout(); navigate("/")}} color='grey'>Logout</Button>
                 </Menu.Item>
             </Container>
         </Menu>

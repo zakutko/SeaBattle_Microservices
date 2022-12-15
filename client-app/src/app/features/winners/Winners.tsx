@@ -26,7 +26,7 @@ export default observer(function Winners()
 
     return (
         <>
-            <div className="winner" data-testid="winners">
+            <div className="winner" id="winners">
                 <h1 className="winner-title">Our record holders</h1>
                 <div className="winner-categories">
                     <div className="third-place">
