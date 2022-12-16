@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react'
 import { useEffect } from 'react';
-import { Route, Router, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import Game from '../features/game/Game';
 import GameHistoryList from '../features/game/GameHistoryList';
 import GameList from '../features/game/GameList';

@@ -61,7 +61,7 @@ export default observer(function Game()
 
     return isEndOfTheGame ? (<EndOfTheGame winnerUserName={winnerUserName} />) : (
         <>
-            <div>
+            <div id="game">
                 <div className="help-colors">
                     <div className="block color-purple">
                         <p>Miss</p>

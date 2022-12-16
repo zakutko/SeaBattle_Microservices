@@ -1,5 +1,6 @@
 .winner {
     padding: 80px 30px 30px 30px; 
+    height: 100vh;
 }
 
 .winner .winner-title {

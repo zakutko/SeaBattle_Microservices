@@ -2,7 +2,7 @@ import { AxiosError } from "axios";
 import { observer } from "mobx-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Button } from "semantic-ui-react";
+import { Button, Container } from "semantic-ui-react";
 import agent from "../../api/agent";
 import { CellList } from "../../models/cellsList";
 import FieldCell from "../field/FieldCell";
@@ -72,12 +72,13 @@ export default observer(function PrepareGame()
 
     return (
         <>
+        <Container id="prepareGame">
             <div className="plug">
                 {isGameOwner && !isSecondPlayerConnected ? (
-                    <Button className="deleteGameBtn" onClick={onClickDelete} size="large">Delete game</Button>
+                    <Button id="deleteGame-btn" className="deleteGameBtn" onClick={onClickDelete} size="large">Delete game</Button>
                 ) : (<div></div>)}
             </div>
-            <div className="prepareGame">
+            <div id="prepareGameCellList" className="prepareGame">
                 <div className="field">
                     <FieldCell cellList={cellList} />
                 </div>
@@ -85,9 +86,10 @@ export default observer(function PrepareGame()
                     <FieldForm />
                 </div>
             </div>
-            <div className="prepareGameButton">
+            <div id="prepareGame-btn" className="prepareGameButton">
                 <Button className="prepareGameBtn" onClick={onClick} size="large">I'm ready</Button>
             </div>
+        </Container>
         </>
     )
 })

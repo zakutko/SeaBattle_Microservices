@@ -7,9 +7,10 @@ import { Ship, ShipFormValues } from "../models/ship";
 import { ShootFormValues } from "../models/shoot";
 import { TopPlayers } from "../models/topPlayers";
 import { User, UserFormValues } from "../models/user";
+//import { store } from "../stores/store";
 
-axios.defaults.baseURL = 'https://localhost:57326/api';
-
+axios.defaults.baseURL = 'https://localhost:64006/api';
+    
 //axios.defaults.headers.common['Authorization'] = `Bearer ${store.commonStore.token}`;
 
 const responceBody = <T>(response: AxiosResponse<T>) => response.data;

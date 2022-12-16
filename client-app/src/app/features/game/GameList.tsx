@@ -2,7 +2,7 @@ import { Card, CardActions, Typography } from "@mui/material";
 import { observer } from "mobx-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button, CardContent, Label } from "semantic-ui-react";
+import { Button, CardContent, Container, Label } from "semantic-ui-react";
 import agent from "../../api/agent";
 import NavBar from "../../layout/NavBar";
 import { GameList } from "../../models/gameList";
@@ -42,41 +42,43 @@ export default observer(function GameList() {
     
     return (
         <>
-        <NavBar />
-        <div className="gameList">
+        <Container id="gameList">
+            <NavBar />
+            <div className="gameList">
 
-            <Button className="createGameBtn" onClick={onClick} as={Link} to="/prepareGame" color="purple">Create Game</Button>
+                <Button id="createGame-btn" className="createGameBtn" onClick={onClick} as={Link} to="/prepareGame" color="purple">Create Game</Button>
 
-            <div className="cards">
-                {gameList.map(game => (
-                    <>
-                        <Card id="card" key={game.id}>
-                            <CardContent>
-                                <Typography variant="h5" component="div">
-                                    Game Id : <b>{game.id}</b>
-                                </Typography>
-                                <Typography variant="h5" component="div">
-                                    Owner : <b>{game.firstPlayer}</b>
-                                </Typography>
-                                <Typography variant="h5" component="div">
-                                    Game State : <b>{game.gameState}</b>
-                                </Typography>
-                                <Typography variant="h5" component="div">
-                                    Number of Players : <b>{game.numberOfPlayers} of 2</b>
-                                </Typography>
-                            </CardContent>
-                            {game.numberOfPlayers === 2 ? (
-                                <Label className="card-label">The game already started!</Label>
-                            ) : (
-                                <CardActions>
-                                    <Button as={Link} to="/prepareGame" onClick={() => onClickJoin(game.id)}>Join the game</Button>
-                                </CardActions>
-                            )}
-                        </Card>
-                    </>
-                ))}
+                <div id="cards" className="cards">
+                    {gameList.map(game => (
+                        <>
+                            <Card id="card" key={game.id}>
+                                <CardContent>
+                                    <Typography variant="h5" component="div">
+                                        Game Id : <b>{game.id}</b>
+                                    </Typography>
+                                    <Typography variant="h5" component="div">
+                                        Owner : <b>{game.firstPlayer}</b>
+                                    </Typography>
+                                    <Typography variant="h5" component="div">
+                                        Game State : <b>{game.gameState}</b>
+                                    </Typography>
+                                    <Typography variant="h5" component="div">
+                                        Number of Players : <b>{game.numberOfPlayers} of 2</b>
+                                    </Typography>
+                                </CardContent>
+                                {game.numberOfPlayers === 2 ? (
+                                    <Label className="card-label">The game already started!</Label>
+                                ) : (
+                                    <CardActions>
+                                        <Button as={Link} to="/prepareGame" onClick={() => onClickJoin(game.id)}>Join the game</Button>
+                                    </CardActions>
+                                )}
+                            </Card>
+                        </>
+                    ))}
+                </div>
             </div>
-        </div>
+        </Container>
         </>
     )
 })

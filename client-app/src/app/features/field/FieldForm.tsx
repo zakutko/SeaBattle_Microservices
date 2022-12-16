@@ -48,7 +48,7 @@ export default observer(function FieldForm(){
 
     return (
         <>
-        <div>
+        <div id="fieldForm">
             <Formik
                 validationSchema={schema}
                 initialValues={{shipSize: SizeOptions.One, shipDirection: Options.Horizontal, x: 0, y: 0, token, error: ""}}
@@ -57,7 +57,7 @@ export default observer(function FieldForm(){
                 {({ values, handleBlur, handleChange ,setFieldValue, handleSubmit, isSubmitting, errors}) => (
                 <Form className="form" onSubmit={handleSubmit}>
                     <h2>Ship size:</h2>
-                    <FormControl component="fieldset">
+                    <FormControl id="shipSizeRadioGroup" component="fieldset">
                         <RadioGroup name={nameSize} value={values.shipSize} onChange={(event) => {
                             setFieldValue(nameSize, event.currentTarget.value)
                         }}>
@@ -68,7 +68,7 @@ export default observer(function FieldForm(){
                         </RadioGroup>
                     </FormControl>
                     <h2>Ship direction:</h2>
-                    <FormControl component="fieldset">
+                    <FormControl id="shipDirectionRadioGroup" component="fieldset">
                         <RadioGroup name={name} value={values.shipDirection} onChange={(event) => {
                             setFieldValue(name, event.currentTarget.value)
                         }}>
@@ -77,7 +77,7 @@ export default observer(function FieldForm(){
                         </RadioGroup>
                     </FormControl>
                     <h2>Ship Position:</h2>
-                    <Form.Group>
+                    <Form.Group id="shipPositionGroup">
                         <input
                             type="x"
                             name="x"
@@ -97,13 +97,13 @@ export default observer(function FieldForm(){
                             className="form-control"
                         />
                     </Form.Group>
-                    <Form.Group>
+                    <Form.Group id="errorMessagesGroup">
                         <div className="error-container">
                             <p className="error">
                                 <ErrorMessage name="x"></ErrorMessage>
                             </p>
                         </div>
-                        <div>
+                        <div className="error-container">
                             <p className="error">
                                 <ErrorMessage name="y"></ErrorMessage>
                             </p>

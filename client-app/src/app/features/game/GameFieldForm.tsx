@@ -11,7 +11,7 @@ export default observer(function GameFieldForm(){
 
     const onSubmit = async (values, {setErrors}) => {
         shootStore.fire(values)
-        .catch(error => setErrors({error: "There is no such cell on the field!"}));
+        .catch(() => setErrors({error: "There is no such cell on the field!"}));
     }
 
     const schema = Yup.object().shape({
@@ -29,28 +29,28 @@ export default observer(function GameFieldForm(){
 
     return(
         <>
-        <div>
+        <div id="gameFieldForm">
             <Formik
                 validationSchema={schema}
                 initialValues={{ x: 0, y: 0, token, error: null}}
                 onSubmit = {onSubmit}
                 >
-                {({ values, handleSubmit, handleBlur, handleChange, isSubmitting, errors}) => (
-                <Form className="form" onSubmit={() => {handleSubmit()}}>
+                {({ handleSubmit, handleBlur, handleChange, isSubmitting}) => (
+                <Form id="form" className="form" onSubmit={() => {handleSubmit()}}>
                     <Form.Group>
                         <div className="error-container">
                             <p className="error">
                                 <ErrorMessage name="x"></ErrorMessage>
                             </p>
                         </div>
-                        <div>
+                        <div className="error-container">
                             <p className="error">
                                 <ErrorMessage name="y"></ErrorMessage>
                             </p>
                         </div>
                     </Form.Group>
                     <Form.Group>
-                    <input
+                        <input
                             type="x"
                             name="x"
                             onChange={handleChange}
