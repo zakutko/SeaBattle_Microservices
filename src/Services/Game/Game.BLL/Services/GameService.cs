@@ -154,24 +154,16 @@ namespace Game.BLL.Services
 
             if (cellList.Any())
             {
-                //delete all cells
-                _unitOfWork.CellRepository.DeleteRange(cellList);
+                //delete all shipWrappers
+                _unitOfWork.ShipWrapperRepository.DeleteRange(shipWrappers);
                 _unitOfWork.Commit();
 
                 //delete all ships
                 _unitOfWork.ShipRepository.DeleteRange(ships);
                 _unitOfWork.Commit();
 
-                //delete all shipWrappers
-                _unitOfWork.ShipWrapperRepository.DeleteRange(shipWrappers);
-                _unitOfWork.Commit();
-
-                //delete game from table Game
-                _unitOfWork.GameRepository.Delete(_unitOfWork.GameRepository.GetAsync(gameId).Result);
-                _unitOfWork.Commit();
-
-                //delete field from table Field
-                _unitOfWork.FieldRepository.Delete(_unitOfWork.FieldRepository.GetAsync(x => x.Id == fieldId).Result);
+                //delete all cells
+                _unitOfWork.CellRepository.DeleteRange(cellList);
                 _unitOfWork.Commit();
 
                 //update appUser
@@ -179,6 +171,16 @@ namespace Game.BLL.Services
                 var newAppUser = _gameServiceHelper.CreateNewAppUser(appUser, null);
                 _unitOfWork.ClearChangeTracker();
                 _unitOfWork.AppUserRepository.Update(newAppUser);
+                _unitOfWork.Commit();
+
+                //delete game from table Game
+                var game = _unitOfWork.GameRepository.GetAsync(x => x.Id == gameId).Result;
+                _unitOfWork.GameRepository.Delete(game);
+                _unitOfWork.Commit();
+
+                //delete field from table Field
+                var field = _unitOfWork.FieldRepository.GetAsync(x => x.Id == fieldId).Result;
+                _unitOfWork.FieldRepository.Delete(field);
                 _unitOfWork.Commit();
             }
             else
@@ -320,32 +322,31 @@ namespace Game.BLL.Services
 
             var ships = shipWrappers.SelectMany(shipWrapperItem => _unitOfWork.ShipRepository.GetAllAsync(x => x.Id == shipWrapperItem.ShipId).Result);
 
-            var numberOfShipsWhereSizeOne = ships.Where(x => x.ShipSizeId == 1).Count();
-            var numberOfShipsWhereSizeTwo = ships.Where(x => x.ShipSizeId == 2).Count();
-            var numberOfShipsWhereSizeThree = ships.Where(x => x.ShipSizeId == 3).Count();
-            var numberOfShipsWhereSizeFour = ships.Where(x => x.ShipSizeId == 4).Count();
-
             switch (createShipRequest.ShipSize)
             {
                 case 1:
+                    var numberOfShipsWhereSizeOne = ships.Where(x => x.ShipSizeId == 1).Count();
                     if (numberOfShipsWhereSizeOne == 4)
                     {
                         throw new Exception("The maximum number of ships with the size 1 on the field is 4!");
                     }
                     break;
                 case 2:
+                    var numberOfShipsWhereSizeTwo = ships.Where(x => x.ShipSizeId == 2).Count();
                     if (numberOfShipsWhereSizeTwo == 3)
                     {
                         throw new Exception("The maximum number of ships with the size 2 on the field is 3!");
                     }
                     break;
                 case 3:
+                    var numberOfShipsWhereSizeThree = ships.Where(x => x.ShipSizeId == 3).Count();
                     if (numberOfShipsWhereSizeThree == 2)
                     {
                         throw new Exception("The maximum number of ships with the size 3 on the field is 2!");
                     }
                     break;
                 case 4:
+                    var numberOfShipsWhereSizeFour = ships.Where(x => x.ShipSizeId == 4).Count();
                     if (numberOfShipsWhereSizeFour == 1)
                     {
                         throw new Exception("The maximum number of ships with the size 4 on the field is 1!");
@@ -363,6 +364,8 @@ namespace Game.BLL.Services
             _unitOfWork.ShipWrapperRepository.Create(shipWrapper);
             _unitOfWork.Commit();
 
+
+            //TODO: need some changes!!!
             var shipDirectionName = _unitOfWork.DirectionRepository.GetAsync(createShipRequest.ShipDirection).Result.DirectionName;
             try
             {
@@ -385,20 +388,25 @@ namespace Game.BLL.Services
                         var cells = cellIdsResult.Select(id => _unitOfWork.CellRepository.GetAsync(x => x.Id == id).Result);
 
                         //update cells in Cell table
-                        var cellId = cells.Where(x => x.X == cell.X && x.Y == cell.Y).FirstOrDefault().Id;
+                        var defaultCell = cells.Where(x => x.X == cell.X && x.Y == cell.Y).FirstOrDefault();
 
-                        var updateCell = new Cell { Id = cellId, X = cell.X, Y = cell.Y, CellStateId = cell.CellStateId };
+                        if (defaultCell?.CellStateId != 1)
+                        {
+                            throw new Exception("Cell busy!");
+                        }
+
+                        var updateCell = new Cell { Id = defaultCell.Id, X = cell.X, Y = cell.Y, CellStateId = cell.CellStateId };
                         _unitOfWork.ClearChangeTracker();
                         _unitOfWork.CellRepository.Update(updateCell);
                         _unitOfWork.Commit();
 
                         //update positions in Position table
-                        var positionId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == cellId).Result.Id;
+                        var positionId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == defaultCell.Id).Result.Id;
                         var updatePosition = new Position
                         {
                             Id = positionId,
                             ShipWrapperId = shipWrapper.Id,
-                            CellId = cellId
+                            CellId = defaultCell.Id
                         };
                         _unitOfWork.ClearChangeTracker();
                         _unitOfWork.PositionRepository.Update(updatePosition);

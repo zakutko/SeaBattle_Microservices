@@ -7,7 +7,7 @@ import "./field.css";
 import * as Yup from 'yup';
 import { AxiosError } from "axios";
 
-export default observer(function FieldForm(){
+export default observer(function FieldForm(props: any){
     const {shipStore} = useStore();
 
     enum SizeOptions {
@@ -27,9 +27,12 @@ export default observer(function FieldForm(){
 
     const token = localStorage.getItem('token');
 
-    const onSubmit = async (values) => {
+    const onSubmit = async (values: any) => {
         if(token){
-            shipStore.createShipOnField(values).catch(error => alert((error as AxiosError).response?.data));
+            shipStore.createShipOnField(values).catch(error => alert((error as AxiosError).response?.data))
+                .then(() => {
+                    props.onClickBuildAShip();
+                })
         }
     }
 

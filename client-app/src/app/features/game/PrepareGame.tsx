@@ -27,10 +27,16 @@ export default observer(function PrepareGame()
                 setIsGameOwner(response.isGameOwner);
                 setIsSecondPlayerConnected(response.isSecondPlayerConnected);
             });
-            agent.Games.cells(token).then(response =>
-            {
-                setCellList(response);
-            });
+            agent.Games.createGame(token)
+                .then(response => {
+                    console.log(response);
+                })
+                .then(() => {
+                    agent.Games.cells(token).then(response => {
+                        setCellList(response);
+                    })
+                })
+
             const interval = setInterval(() =>
             {
                 agent.Games.isGameOwner(token).then(response =>
@@ -43,7 +49,18 @@ export default observer(function PrepareGame()
         }
     }, [])
 
-    function onClick()
+    const onClickBuildAShip = () =>
+    {
+        const token = localStorage.getItem('token');
+        if(token)
+        {
+            agent.Games.cells(token).then(response => {
+                setCellList(response);
+            });
+        };
+    }
+
+    const onClick = () =>
     {
         const token = localStorage.getItem('token');
         if (token)
@@ -60,14 +77,19 @@ export default observer(function PrepareGame()
         console.log(message);
     }
 
-    function onClickDelete()
+    const onClickDelete = () =>
     {
         const token = localStorage.getItem('token');
         if (token)
         {
-            agent.Games.deleteGame(token);
+            agent.Games.deleteGame(token)
+                .then(response => {
+                    console.log(response);
+                })
+                .then(() => {
+                    navigate("/gameList");
+                });
         }
-        navigate("/gameList");
     }
 
     return (
@@ -83,7 +105,7 @@ export default observer(function PrepareGame()
                     <FieldCell cellList={cellList} />
                 </div>
                 <div className="fieldForm">
-                    <FieldForm />
+                    <FieldForm onClickBuildAShip={onClickBuildAShip}/>
                 </div>
             </div>
             <div id="prepareGame-btn" className="prepareGameButton">

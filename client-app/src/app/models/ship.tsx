@@ -1,7 +1,5 @@
 export interface Ship {
-    shipDirection: number;
-    shipState: number;
-    shipSize: number;
+    message: string;
 }
 
 export interface ShipFormValues {

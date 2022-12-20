@@ -2,6 +2,7 @@
 using Game.DAL.Interfaces;
 using Game.DAL.Models;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 
 namespace Game.BLL.Helpers
 {
@@ -105,18 +106,20 @@ namespace Game.BLL.Helpers
         public IEnumerable<Cell> GetCellList(int fieldId)
         {
             var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-            var positions = shipWrappers.SelectMany(shipWrapper => _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapper.Id).Result);
-            var resultList = positions.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result);
 
-            return resultList;
+            var positions = new List<Position>();
+            foreach(var shipWrapper in shipWrappers)
+            {
+                positions.AddRange(_unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapper.Id).Result);
+            }
+
+            return positions.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result).ToList();
         }
 
         public IEnumerable<Ship> GetShipList(int fieldId)
         {
-            var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-            var resultList = shipWrappers.Select(shipWrapper => _unitOfWork.ShipRepository.GetAsync(shipWrapper.ShipId).Result);
-
-            return resultList;
+            var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null).Result;
+            return shipWrappers.Select(shipWrapper => _unitOfWork.ShipRepository.GetAsync(x => x.Id == shipWrapper.ShipId).Result).ToList();
         }
 
         public string GetSecondPlayerId(string playerId)

@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from "mobx";
+import { makeAutoObservable } from "mobx";
 import agent from "../api/agent";
 import { Ship, ShipFormValues } from "../models/ship";
 
@@ -11,9 +11,7 @@ export default class ShipStore {
 
     createShipOnField = async (creds: ShipFormValues) => {
         try {
-            const ship = await agent.Games.createShipOnField(creds);
-            runInAction(() => this.ship = ship);
-            console.log(ship);
+            await agent.Games.createShipOnField(creds);
         }
         catch(error){
             throw error;

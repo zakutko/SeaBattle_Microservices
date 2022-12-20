@@ -2,6 +2,7 @@
 using Game.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Game.DAL.Repositories
 {
@@ -39,12 +40,12 @@ namespace Game.DAL.Repositories
             return await _dataContext.Set<T>().Where(filter).FirstOrDefaultAsync();
         }
 
-        public async void Create(T entity)
+        public async Task Create(T entity)
         {
             await _dataContext.Set<T>().AddAsync(entity);
         }
 
-        public async void CreateRange(IEnumerable<T> entities)
+        public async Task CreateRange(IEnumerable<T> entities)
         {
             await _dataContext.Set<T>().AddRangeAsync(entities);
         }

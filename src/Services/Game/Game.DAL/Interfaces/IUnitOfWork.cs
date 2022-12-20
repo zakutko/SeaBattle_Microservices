@@ -4,7 +4,7 @@ namespace Game.DAL.Interfaces
 {
     public interface IUnitOfWork
     {
-        IRepository<DAL.Models.Game> GameRepository { get; }
+        IRepository<Models.Game> GameRepository { get; }
         IRepository<PlayerGame> PlayerGameRepository { get; }
         IRepository<AppUser> AppUserRepository { get; }
         IRepository<GameState> GameStateRepository { get; }

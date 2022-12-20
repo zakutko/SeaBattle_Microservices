@@ -1,7 +1,7 @@
 import { Card, CardActions, Typography } from "@mui/material";
 import { observer } from "mobx-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button, CardContent, Container, Label } from "semantic-ui-react";
 import agent from "../../api/agent";
 import NavBar from "../../layout/NavBar";
@@ -10,6 +10,7 @@ import "./game.css";
 
 export default observer(function GameList() {
     const [gameList, setGameList] = useState<GameList[]>([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -21,16 +22,13 @@ export default observer(function GameList() {
                 agent.Games.games(token).then(response => {
                     setGameList(response);
                 });
-            }, 1000)
+            }, 3000)
             return () => clearInterval(interval);
         }
     }, [])
 
     const onClick = () => {
-        const token = localStorage.getItem('token');
-        if(token){
-            agent.Games.createGame(token);
-        }
+        navigate('/prepareGame');
     }
 
     const onClickJoin = (id: number) => {
@@ -70,7 +68,7 @@ export default observer(function GameList() {
                                     <Label className="card-label">The game already started!</Label>
                                 ) : (
                                     <CardActions>
-                                        <Button as={Link} to="/prepareGame" onClick={() => onClickJoin(game.id)}>Join the game</Button>
+                                        <Button onClick={() => onClickJoin(game.id)}>Join the game</Button>
                                     </CardActions>
                                 )}
                             </Card>
