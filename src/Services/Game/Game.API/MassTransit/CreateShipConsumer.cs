@@ -17,7 +17,6 @@ namespace Game.API.MassTransit
         {
             var result = _gameService.CreateShipOnField(context.Message);
             await context.RespondAsync(result);
-            //await context.RespondAsync(new CreateShipResponse { Message = "Create ship was successful!" });
         }
     }
 }

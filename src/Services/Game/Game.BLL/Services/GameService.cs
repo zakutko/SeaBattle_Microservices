@@ -422,7 +422,7 @@ namespace Game.BLL.Services
             return new CreateShipResponse { Message = "Create ship was successful!" };
         }
         
-        public void SetPlayerReady(IsPlayerReadyRequest isPlayerReadyRequest)
+        public IsPlayerReadyResponse SetPlayerReady(IsPlayerReadyRequest isPlayerReadyRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(isPlayerReadyRequest.Token);
             var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
@@ -432,7 +432,7 @@ namespace Game.BLL.Services
 
             if (shipWrappers.Count() < 11)
             {
-                throw new Exception("Number of ships must be 10!");
+                return new IsPlayerReadyResponse { Message = "Number of ships must be 10!" };
             }
 
             var playerGame = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == playerId || x.SecondPlayerId == playerId).Result;
@@ -451,6 +451,8 @@ namespace Game.BLL.Services
                 _unitOfWork.ClearChangeTracker();
                 _unitOfWork.PlayerGameRepository.Update(newPlayerGame);
                 _unitOfWork.Commit();
+
+                return new IsPlayerReadyResponse { Message = "The Player is ready!" };
             }
             else
             {
@@ -467,6 +469,8 @@ namespace Game.BLL.Services
                 _unitOfWork.ClearChangeTracker();
                 _unitOfWork.PlayerGameRepository.Update(newPlayerGame);
                 _unitOfWork.Commit();
+
+                return new IsPlayerReadyResponse { Message = "The Player is ready!" };
             }
         }
         

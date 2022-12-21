@@ -1,7 +1,7 @@
 import { Card, CardActions, Typography } from "@mui/material";
 import { observer } from "mobx-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button, CardContent, Container, Label } from "semantic-ui-react";
 import agent from "../../api/agent";
 import NavBar from "../../layout/NavBar";
@@ -30,20 +30,22 @@ export default observer(function GameList() {
     const onClick = () => {
         const token = localStorage.getItem('token');
         if(token){
-            agent.Games.createGame(token)
-                .then(response => {
-                    console.log(response);
-                })
-                .then(() => {
-                    navigate('/prepareGame');
-                })
+            agent.Games.createGame(token).then(response => {
+                console.log(response);
+            })
+            .then(() => {
+                navigate('/prepareGame');
+            })
         }
     }
 
     const onClickJoin = (id: number) => {
         const token = localStorage.getItem('token');
         if(token){
-            agent.Games.joinSecondPlayer(id, token);
+            agent.Games.joinSecondPlayer(id, token)
+                .then(() => {
+                    navigate('/prepareGame');
+                })
         }
     }
     
@@ -53,7 +55,7 @@ export default observer(function GameList() {
             <NavBar />
             <div className="gameList">
 
-                <Button id="createGame-btn" className="createGameBtn" onClick={onClick} as={Link} to="/prepareGame" color="purple">Create Game</Button>
+                <Button id="createGame-btn" className="createGameBtn" onClick={onClick} color="purple">Create Game</Button>
 
                 <div id="cards" className="cards">
                     {gameList.map(game => (

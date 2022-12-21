@@ -1,4 +1,3 @@
-import { AxiosError } from "axios";
 import { observer } from "mobx-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -12,7 +11,6 @@ import "./game.css";
 export default observer(function PrepareGame()
 {
     const navigate = useNavigate();
-    const [message, setMessage] = useState("");
     const [cellList, setCellList] = useState<CellList[]>([]);
     const [isGameOwner, setIsGameOwner] = useState(true);
     const [isSecondPlayerConnected, setIsSecondPlayerConnected] = useState(false);
@@ -30,7 +28,7 @@ export default observer(function PrepareGame()
             agent.Games.cells(token).then(response => {
                 setCellList(response);
             });
-            
+
             const interval = setInterval(() =>
             {
                 agent.Games.isGameOwner(token).then(response =>
@@ -63,12 +61,16 @@ export default observer(function PrepareGame()
             {
                 setCellList(response);
             });
-            agent.Games.isPlayerReady(token)
-                .then(response => { setMessage(response.message) })
-                .then(() => navigate('/game'))
-                .catch(error => alert((error as AxiosError).response?.data))
+            agent.Games.isPlayerReady(token).then(response => {
+                if (response.message !== "The Player is ready!"){
+                    alert(response.message);
+                }
+                else {
+                    console.log(response.message);
+                    navigate('/game');
+                }
+            })
         }
-        console.log(message);
     }
 
     const onClickDelete = () =>

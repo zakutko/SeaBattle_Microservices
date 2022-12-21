@@ -5,12 +5,15 @@ import { useStore } from "../../stores/store";
 import "./game.css";
 import * as Yup from 'yup';
 
-export default observer(function GameFieldForm(){
+export default observer(function GameFieldForm(props: any){
     const {shootStore} = useStore();
     const token = localStorage.getItem('token');
 
     const onSubmit = async (values, {setErrors}) => {
         shootStore.fire(values)
+        .then(() => {
+            props.setSecondCellList();
+        })
         .catch(() => setErrors({error: "There is no such cell on the field!"}));
     }
 

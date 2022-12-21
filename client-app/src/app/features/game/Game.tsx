@@ -26,11 +26,25 @@ export default observer(function Game()
             agent.Games.cells(token).then(response =>
             {
                 setCellList(response);
-            });
-            agent.Games.secondPlayerCells(token).then(response =>
-            {
-                setSecondCellList(response);
-            });
+            })
+            .then(() => {
+                agent.Games.endOfTheGame(token).then(response => {
+                    setWinnerUserName(response.winnerUserName);
+                    setIsEndOfTheGame(response.isEndOfTheGame);
+                });
+                agent.Games.numberOfReadyPlayers(token).then(response => {
+                    setNumberOfReadyPlayers(response.numberOfReadyPlayers);
+
+                    if(response.numberOfReadyPlayers === 2){
+                        agent.Games.secondPlayerCells(token).then(response => {
+                            setSecondCellList(response);
+                        });
+                    }
+                });
+                agent.Games.priopity(token).then(response => {
+                    setIsHit(response.isHit);
+                });
+            })
             const interval = setInterval(() =>
             {
                 agent.Games.numberOfReadyPlayers(token).then(response =>
@@ -39,25 +53,27 @@ export default observer(function Game()
                 });
                 agent.Games.priopity(token).then(response =>
                 {
-                    setIsHit(response.isHit);
+                   setIsHit(response.isHit);
                 });
                 agent.Games.endOfTheGame(token).then(response =>
                 {
                     setWinnerUserName(response.winnerUserName);
                     setIsEndOfTheGame(response.isEndOfTheGame);
                 });
-                agent.Games.cells(token).then(response =>
-                {
-                    setCellList(response);
-                });
-                agent.Games.secondPlayerCells(token).then(response =>
-                {
-                    setSecondCellList(response);
-                });
-            }, 1500);
+            }, 3000);
+
             return () => clearInterval(interval);
         }
-    }, [])
+    }, []);
+
+    const setSecondCellListFunc = () => {
+        const token = localStorage.getItem('token');
+        if(token){
+            agent.Games.secondPlayerCells(token).then(response => {
+                setSecondCellList(response);
+            })
+        }
+    }
 
     return isEndOfTheGame ? (<EndOfTheGame winnerUserName={winnerUserName} />) : (
         <>
@@ -87,7 +103,7 @@ export default observer(function Game()
                     }
                     {numberOfReadyPlayers === 2 &&
                         <>
-                            {isHit ? (<GameFieldForm />) : (<p className="waiting">Enemy fire!</p>)}
+                            {isHit ? (<GameFieldForm setSecondCellList={setSecondCellListFunc}/>) : (<p className="waiting">Enemy fire!</p>)}
                         </>
                     }
                 </div>

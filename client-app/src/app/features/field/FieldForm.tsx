@@ -23,11 +23,13 @@ export default observer(function FieldForm(props: any){
     const nameSize = 'shipSize';
     const token = localStorage.getItem('token');
 
-    const onSubmit = async (values: any) => {
+    const onSubmit = async (values: any) => {   
         if(token){
             agent.Games.createShipOnField(values)
                 .then(response => {
-                    alert(response.message);
+                    if(response.message !== 'Create ship was successful!'){
+                        alert(response.message);
+                    }
                 })
                 .then(() => {
                     props.onClickBuildAShip();
