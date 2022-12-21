@@ -5,11 +5,8 @@ import { FormControl, FormControlLabel, Radio, RadioGroup } from "@mui/material"
 import "./field.css";
 import * as Yup from 'yup';
 import agent from "../../api/agent";
-import { useAlert } from 'react-alert';
 
 export default observer(function FieldForm(props: any){
-    const alert = useAlert()
-
     enum SizeOptions {
         "One" = 1,
         "Two" = 2,
@@ -30,9 +27,7 @@ export default observer(function FieldForm(props: any){
         if(token){
             agent.Games.createShipOnField(values)
                 .then(response => {
-                    alert.show(response.message, {
-                        type: 'success'
-                    })
+                    alert(response.message);
                 })
                 .then(() => {
                     props.onClickBuildAShip();

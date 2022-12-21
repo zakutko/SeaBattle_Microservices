@@ -29,7 +29,8 @@ export default observer(function PrepareGame()
             });
             agent.Games.cells(token).then(response => {
                 setCellList(response);
-            })
+            });
+            
             const interval = setInterval(() =>
             {
                 agent.Games.isGameOwner(token).then(response =>
