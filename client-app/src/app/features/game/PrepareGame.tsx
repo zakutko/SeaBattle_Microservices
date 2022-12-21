@@ -27,16 +27,9 @@ export default observer(function PrepareGame()
                 setIsGameOwner(response.isGameOwner);
                 setIsSecondPlayerConnected(response.isSecondPlayerConnected);
             });
-            agent.Games.createGame(token)
-                .then(response => {
-                    console.log(response);
-                })
-                .then(() => {
-                    agent.Games.cells(token).then(response => {
-                        setCellList(response);
-                    })
-                })
-
+            agent.Games.cells(token).then(response => {
+                setCellList(response);
+            })
             const interval = setInterval(() =>
             {
                 agent.Games.isGameOwner(token).then(response =>

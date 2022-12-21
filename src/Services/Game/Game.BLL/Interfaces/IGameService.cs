@@ -10,7 +10,7 @@ namespace Game.BLL.Interfaces
         void DeleteGame(DeleteGameRequest deleteGameRequest);
         void JoinSecondPlayer(JoinSecondPlayerRequest joinSecondPlayerRequest);
         IEnumerable<CellListResponse> GetAllCells(CellListRequest cellListRequest);
-        void CreateShipOnField(CreateShipRequest createShipRequest);
+        CreateShipResponse CreateShipOnField(CreateShipRequest createShipRequest);
         void SetPlayerReady(IsPlayerReadyRequest isPlayerReadyRequest);
         IsTwoPlayersReadyResponse IsTwoPlayersReady(IsTwoPlayersReadyRequest isTwoPlayersReadyRequest);
         IEnumerable<CellListResponseForSecondPlayer> GetAllCellForSecondPlayer(CellListRequestForSecondPlayer cellListRequestForSecondPlayer);

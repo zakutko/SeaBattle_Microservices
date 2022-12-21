@@ -15,15 +15,9 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<CreateShipRequest> context)
         {
-            try
-            {
-                _gameService.CreateShipOnField(context.Message);
-                await context.RespondAsync(new CreateShipResponse { Message = "Create ship was successful!" });
-            }
-            catch (Exception ex)
-            {
-                await context.RespondAsync(new CreateShipResponse { Message = ex.Message });
-            }
+            var result = _gameService.CreateShipOnField(context.Message);
+            await context.RespondAsync(result);
+            //await context.RespondAsync(new CreateShipResponse { Message = "Create ship was successful!" });
         }
     }
 }

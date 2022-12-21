@@ -18,7 +18,7 @@ namespace Game.BLL.Services
             _gameServiceHelper = gameServiceHelper;
             _mapper = mapper;
         }
-        
+
         public IEnumerable<GameListResponse> GetAllGames(GameListRequest gameListRequest)
         {
             var playerGameList = _unitOfWork.PlayerGameRepository.GetAllAsync().Result;
@@ -33,7 +33,7 @@ namespace Game.BLL.Services
                 var gameState = _unitOfWork.GameStateRepository.GetAsync(game.GameStateId).Result.GameStateName;
 
                 var numberOfPlayers = 2;
-                if(secondPlayer == null)
+                if (secondPlayer == null)
                 {
                     numberOfPlayers = 1;
                 }
@@ -53,7 +53,7 @@ namespace Game.BLL.Services
             var playerGameResponseListWithoutCurrUser = playerGameResponseList.Where(playerGame => playerGame.FirstPlayer != username && playerGame.SecondPlayer != username);
             return playerGameResponseListWithoutCurrUser;
         }
-        
+
         public void CreateGame(CreateGameRequest createGameRequest)
         {
             var game = new DAL.Models.Game { GameStateId = 1 };
@@ -105,7 +105,7 @@ namespace Game.BLL.Services
                 }
             }
         }
-        
+
         public IsGameOwnerResponse IsGameOwner(IsGameOwnerRequest isGameOwnerRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(isGameOwnerRequest.Token);
@@ -140,7 +140,7 @@ namespace Game.BLL.Services
                 IsSecondPlayerConnected = isSecondPlayerConnected
             };
         }
-        
+
         public void DeleteGame(DeleteGameRequest deleteGameRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(deleteGameRequest.Token);
@@ -201,7 +201,7 @@ namespace Game.BLL.Services
                 _unitOfWork.Commit();
             }
         }
-        
+
         public void JoinSecondPlayer(JoinSecondPlayerRequest joinSecondPlayerRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(joinSecondPlayerRequest.Token);
@@ -293,7 +293,7 @@ namespace Game.BLL.Services
                 }
             }
         }
-        
+
         public IEnumerable<CellListResponse> GetAllCells(CellListRequest cellListRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(cellListRequest.Token);
@@ -305,7 +305,7 @@ namespace Game.BLL.Services
             return cellList.Select(cell => _mapper.Map<CellListResponse>(cell)).ToList();
         }
 
-        public void CreateShipOnField(CreateShipRequest createShipRequest)
+        public CreateShipResponse CreateShipOnField(CreateShipRequest createShipRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(createShipRequest.Token);
             var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
@@ -315,7 +315,7 @@ namespace Game.BLL.Services
             var numberOfShipsOnField = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null).Result.Count();
             if (numberOfShipsOnField == 10)
             {
-                throw new Exception("There are already 10 ships on the field!");
+                return new CreateShipResponse { Message = "There are already 10 ships on the field!" };
             }
 
             var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
@@ -328,28 +328,28 @@ namespace Game.BLL.Services
                     var numberOfShipsWhereSizeOne = ships.Where(x => x.ShipSizeId == 1).Count();
                     if (numberOfShipsWhereSizeOne == 4)
                     {
-                        throw new Exception("The maximum number of ships with the size 1 on the field is 4!");
+                        return new CreateShipResponse { Message = "The maximum number of ships with the size 1 on the field is 4!" };
                     }
                     break;
                 case 2:
                     var numberOfShipsWhereSizeTwo = ships.Where(x => x.ShipSizeId == 2).Count();
                     if (numberOfShipsWhereSizeTwo == 3)
                     {
-                        throw new Exception("The maximum number of ships with the size 2 on the field is 3!");
+                        return new CreateShipResponse { Message = "The maximum number of ships with the size 2 on the field is 3!" };
                     }
                     break;
                 case 3:
                     var numberOfShipsWhereSizeThree = ships.Where(x => x.ShipSizeId == 3).Count();
                     if (numberOfShipsWhereSizeThree == 2)
                     {
-                        throw new Exception("The maximum number of ships with the size 3 on the field is 2!");
+                        return new CreateShipResponse { Message = "The maximum number of ships with the size 3 on the field is 2!" };
                     }
                     break;
                 case 4:
                     var numberOfShipsWhereSizeFour = ships.Where(x => x.ShipSizeId == 4).Count();
                     if (numberOfShipsWhereSizeFour == 1)
                     {
-                        throw new Exception("The maximum number of ships with the size 4 on the field is 1!");
+                        return new CreateShipResponse { Message = "The maximum number of ships with the size 4 on the field is 1!" };
                     }
                     break;
             }
@@ -364,13 +364,12 @@ namespace Game.BLL.Services
             _unitOfWork.ShipWrapperRepository.Create(shipWrapper);
             _unitOfWork.Commit();
 
-
             //TODO: need some changes!!!
             var shipDirectionName = _unitOfWork.DirectionRepository.GetAsync(createShipRequest.ShipDirection).Result.DirectionName;
             try
             {
                 var cellListResult = _gameServiceHelper.GetAllCells(shipDirectionName, createShipRequest.ShipSize, createShipRequest.X, createShipRequest.Y, fieldId);
-                
+
                 if (!cellListResult.Any())
                 {
                     _unitOfWork.ShipWrapperRepository.Delete(shipWrapper);
@@ -380,45 +379,36 @@ namespace Game.BLL.Services
 
                 foreach (var cell in cellListResult)
                 {
-                    try
+                    var shipWrappersResult = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
+                    var positionsResult = shipWrappersResult.SelectMany(shipWrapperItem => _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperItem.Id).Result);
+                    var cellIdsResult = positionsResult.Select(position => position.CellId);
+                    var cells = cellIdsResult.Select(id => _unitOfWork.CellRepository.GetAsync(x => x.Id == id).Result);
+
+                    //update cells in Cell table
+                    var defaultCell = cells.Where(x => x.X == cell.X && x.Y == cell.Y).FirstOrDefault();
+
+                    if (defaultCell?.CellStateId == 2)
                     {
-                        var shipWrappersResult = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-                        var positionsResult = shipWrappersResult.SelectMany(shipWrapperItem => _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperItem.Id).Result);
-                        var cellIdsResult = positionsResult.Select(position => position.CellId);
-                        var cells = cellIdsResult.Select(id => _unitOfWork.CellRepository.GetAsync(x => x.Id == id).Result);
-
-                        //update cells in Cell table
-                        var defaultCell = cells.Where(x => x.X == cell.X && x.Y == cell.Y).FirstOrDefault();
-
-                        if (defaultCell?.CellStateId != 1)
-                        {
-                            throw new Exception("Cell busy!");
-                        }
-
-                        var updateCell = new Cell { Id = defaultCell.Id, X = cell.X, Y = cell.Y, CellStateId = cell.CellStateId };
-                        _unitOfWork.ClearChangeTracker();
-                        _unitOfWork.CellRepository.Update(updateCell);
-                        _unitOfWork.Commit();
-
-                        //update positions in Position table
-                        var positionId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == defaultCell.Id).Result.Id;
-                        var updatePosition = new Position
-                        {
-                            Id = positionId,
-                            ShipWrapperId = shipWrapper.Id,
-                            CellId = defaultCell.Id
-                        };
-                        _unitOfWork.ClearChangeTracker();
-                        _unitOfWork.PositionRepository.Update(updatePosition);
-                        _unitOfWork.Commit();
+                       throw new Exception("One of Cells is busy!");
                     }
-                    catch (Exception ex)
+
+                    var updateCell = new Cell { Id = defaultCell.Id, X = cell.X, Y = cell.Y, CellStateId = cell.CellStateId };
+                    _unitOfWork.ClearChangeTracker();
+                    _unitOfWork.CellRepository.Update(updateCell);
+                    _unitOfWork.Commit();
+
+                    //update positions in Position table
+                    var positionId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == defaultCell.Id).Result.Id;
+                    var updatePosition = new Position
                     {
-                        _unitOfWork.ShipWrapperRepository.Delete(shipWrapper);
-                        _unitOfWork.ShipRepository.Delete(newShip);
-                        _unitOfWork.Commit();
-                        throw new Exception(ex.Message);
-                    }
+                        Id = positionId,
+                        ShipWrapperId = shipWrapper.Id,
+                        CellId = defaultCell.Id
+                    };
+
+                    _unitOfWork.ClearChangeTracker();
+                    _unitOfWork.PositionRepository.Update(updatePosition);
+                    _unitOfWork.Commit();
                 }
             }
             catch (Exception ex)
@@ -426,8 +416,10 @@ namespace Game.BLL.Services
                 _unitOfWork.ShipWrapperRepository.Delete(shipWrapper);
                 _unitOfWork.ShipRepository.Delete(newShip);
                 _unitOfWork.Commit();
-                throw new Exception(ex.Message);
+                return new CreateShipResponse { Message = ex.Message };
             }
+
+            return new CreateShipResponse { Message = "Create ship was successful!" };
         }
         
         public void SetPlayerReady(IsPlayerReadyRequest isPlayerReadyRequest)

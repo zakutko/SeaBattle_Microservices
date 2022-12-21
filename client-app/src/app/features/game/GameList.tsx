@@ -28,7 +28,16 @@ export default observer(function GameList() {
     }, [])
 
     const onClick = () => {
-        navigate('/prepareGame');
+        const token = localStorage.getItem('token');
+        if(token){
+            agent.Games.createGame(token)
+                .then(response => {
+                    console.log(response);
+                })
+                .then(() => {
+                    navigate('/prepareGame');
+                })
+        }
     }
 
     const onClickJoin = (id: number) => {

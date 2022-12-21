@@ -1,14 +1,14 @@
 import { ErrorMessage, Formik } from "formik";
 import { observer } from "mobx-react";
 import { Form } from "semantic-ui-react";
-import { useStore } from "../../stores/store";
 import { FormControl, FormControlLabel, Radio, RadioGroup } from "@mui/material";
 import "./field.css";
 import * as Yup from 'yup';
-import { AxiosError } from "axios";
+import agent from "../../api/agent";
+import { useAlert } from 'react-alert';
 
 export default observer(function FieldForm(props: any){
-    const {shipStore} = useStore();
+    const alert = useAlert()
 
     enum SizeOptions {
         "One" = 1,
@@ -24,12 +24,16 @@ export default observer(function FieldForm(props: any){
 
     const name = 'shipDirection';
     const nameSize = 'shipSize';
-
     const token = localStorage.getItem('token');
 
     const onSubmit = async (values: any) => {
         if(token){
-            shipStore.createShipOnField(values).catch(error => alert((error as AxiosError).response?.data))
+            agent.Games.createShipOnField(values)
+                .then(response => {
+                    alert.show(response.message, {
+                        type: 'success'
+                    })
+                })
                 .then(() => {
                     props.onClickBuildAShip();
                 })
