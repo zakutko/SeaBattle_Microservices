@@ -300,11 +300,13 @@ namespace Game.BLL.Services
             var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
 
             var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == playerId).Result.Id;
-            var cellList = _gameServiceHelper.GetCellList(fieldId).OrderBy(x => x.Id).ToList();
+            var cellList = _gameServiceHelper.GetCellList(fieldId).OrderBy(x => x.Id);
 
-            return cellList.Select(cell => _mapper.Map<CellListResponse>(cell)).ToList();
+            return cellList.Select(_mapper.Map<CellListResponse>);
         }
 
+
+        //TODO: ~20 seconds (need to speed up this method and GetAllCells method in gameservicehelper)
         public CreateShipResponse CreateShipOnField(CreateShipRequest createShipRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(createShipRequest.Token);
@@ -364,7 +366,6 @@ namespace Game.BLL.Services
             _unitOfWork.ShipWrapperRepository.Create(shipWrapper);
             _unitOfWork.Commit();
 
-            //TODO: need some changes!!!
             var shipDirectionName = _unitOfWork.DirectionRepository.GetAsync(createShipRequest.ShipDirection).Result.DirectionName;
             try
             {
@@ -504,20 +505,18 @@ namespace Game.BLL.Services
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(cellListRequestForSecondPlayer.Token);
             var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
-            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(playerId);
 
-            var cellListResponse = new List<CellListResponseForSecondPlayer>();
+            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(playerId);
 
             if (secondPlayerId == null)
             {
-                return cellListResponse;
+                return Enumerable.Empty<CellListResponseForSecondPlayer>();
             }
 
             var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
-            var cellList = _gameServiceHelper.GetCellList(fieldId);
-            cellListResponse.AddRange(cellList.Select(cell => _mapper.Map<CellListResponseForSecondPlayer>(cell)));
+            var cellList = _gameServiceHelper.GetCellList(fieldId).OrderBy(x => x.Id);
 
-            return cellListResponse.OrderBy(x => x.Id);
+            return cellList.Select(_mapper.Map<CellListResponseForSecondPlayer>);
         }
         
         public ShootResponse Fire(ShootRequest shootRequest)
@@ -556,7 +555,7 @@ namespace Game.BLL.Services
                 var shipWrapperId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == myCell.Id).Result.ShipWrapperId;
                 var positionsByShipWrapperId = _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperId).Result;
                 var cellsByCellIds = positionsByShipWrapperId.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result);
-                var isDestroyed = cellsByCellIds.Where(x => x.CellStateId == 2).Count() > 1 ? false : true;
+                var isDestroyed = cellsByCellIds.Count(x => x.CellStateId == 2) <= 1;
 
                 var newCell = _gameServiceHelper.CreateNewCell(myCell.Id, myCell.X, myCell.Y, myCell.CellStateId, false);
 
@@ -589,6 +588,7 @@ namespace Game.BLL.Services
             return new HitResponse { IsHit = player.IsHit };
         }
         
+        //TODO: Need to speed up
         public IsEndOfTheGameResponse IsEndOfTheGame(IsEndOfTheGameRequest isEndOfTheGameRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(isEndOfTheGameRequest.Token);

@@ -113,7 +113,7 @@ namespace Game.BLL.Helpers
                 positions.AddRange(_unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapper.Id).Result);
             }
 
-            return positions.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result).ToList();
+            return positions.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result);
         }
 
         public IEnumerable<Ship> GetShipList(int fieldId)
@@ -141,8 +141,7 @@ namespace Game.BLL.Helpers
 
             var positionsDefault = _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperDefault.Id).Result;
 
-            var cellIds = positionsDefault.Select(position => position.CellId);
-            var cellList = cellIds.Select(cellId => _unitOfWork.CellRepository.GetAsync(cellId).Result);
+            var cellList = positionsDefault.Select(x => _unitOfWork.CellRepository.GetAsync(x.CellId).Result);
 
             for (int i = 0; i < shipSize; i++)
             {
@@ -221,37 +220,18 @@ namespace Game.BLL.Helpers
                                 break;
                         };
                     }
-                    var newArroundList = aroundNewCells.Where(arroundNewCell => !(arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10));
-                    
-                    if (!cellList.Any())
+
+                    var allCellsWithStateNoEmpty = cellList.Where(x => x.CellStateId == 2 || x.CellStateId == 5);
+
+                    foreach (var _ in allCellsWithStateNoEmpty.Where(cell => newCell.X == cell.X && newCell.Y == cell.Y).Select(cell => new { }))
                     {
-                        cellListResult.Add(newCell);
-                        cellListResult.AddRange(newArroundList);
+                        aroundNewCells.Clear();
+                        cellListResult.Clear();
+                        break;
                     }
 
-                    else
-                    {
-                        var allCellsWithStateNoEmpty = cellList.Where(x => x.CellStateId == 2 || x.CellStateId == 5);
-                        var isMatches = false;
-                        foreach (var cell in allCellsWithStateNoEmpty)
-                        {
-                            if (newCell.X == cell.X && newCell.Y == cell.Y)
-                            {
-                                isMatches = true;
-                                break;
-                            }
-                        }
-                        if (isMatches)
-                        {
-                            aroundNewCells.Clear();
-                            cellListResult.Clear();
-                        }
-                        else
-                        {
-                            cellListResult.AddRange(newArroundList);
-                            cellListResult.Add(newCell);
-                        }
-                    }
+                    cellListResult.AddRange(aroundNewCells.Where(arroundNewCell => !(arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10)));
+                    cellListResult.Add(newCell);
                 }
                 else if (shipDirectionName == "Horizontal")
                 {
@@ -329,36 +309,16 @@ namespace Game.BLL.Helpers
                         };
                     }
 
-                    var newArroundList = aroundNewCells.Where(arroundNewCell => !(arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10));
+                    var allCellsWithStateNoEmpty = cellList.Where(x => x.CellStateId == 2 || x.CellStateId == 5);
 
-                    if (!cellList.Any())
+                    foreach (var _ in allCellsWithStateNoEmpty.Where(cell => newCell.X == cell.X && newCell.Y == cell.Y).Select(cell => new { }))
                     {
-                        cellListResult.Add(newCell);
-                        cellListResult.AddRange(newArroundList);
+                        aroundNewCells.Clear();
+                        cellListResult.Clear();
+                        break;
                     }
-                    else
-                    {
-                        var allCellsWithStateNoEmpty = cellList.Where(x => x.CellStateId == 2 || x.CellStateId == 5);
-                        var isMatches = false;
-                        foreach (var cell in allCellsWithStateNoEmpty)
-                        {
-                            if (newCell.X == cell.X && newCell.Y == cell.Y)
-                            {
-                                isMatches = true;
-                                break;
-                            }
-                        }
-                        if (isMatches)
-                        {
-                            aroundNewCells.Clear();
-                            cellListResult.Clear();
-                        }
-                        else
-                        {
-                            cellListResult.Add(newCell);
-                            cellListResult.AddRange(newArroundList);
-                        }
-                    }
+                    cellListResult.Add(newCell);
+                    cellListResult.AddRange(aroundNewCells.Where(arroundNewCell => !(arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10)));
                 }
             }
 
