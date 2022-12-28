@@ -62,12 +62,8 @@ namespace Game.BLL.Helpers
             {
                 return true;
             }
-            var count = cells.Where(x => x.CellStateId == 2 || x.CellStateId == 3).Count();
-            if (count == 0)
-            {
-                return false;
-            }
-            return true;
+
+            return cells.Where(x => x.CellStateId == 2 || x.CellStateId == 3).Count() != 0;
         }
 
         public string GetUsernameByDecodingJwtToken(string token)
@@ -103,28 +99,28 @@ namespace Game.BLL.Helpers
             };
         }
 
-        public IEnumerable<Cell> GetCellList(int fieldId)
+        public async Task<IEnumerable<Cell>> GetCellList(int fieldId)
         {
-            var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
+            var shipWrappers = await _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId);
 
             var positions = new List<Position>();
             foreach(var shipWrapper in shipWrappers)
             {
-                positions.AddRange(_unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapper.Id).Result);
+                positions.AddRange(await _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapper.Id));
             }
 
             return positions.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result);
         }
 
-        public IEnumerable<Ship> GetShipList(int fieldId)
+        public async Task<IEnumerable<Ship>> GetShipList(int fieldId)
         {
-            var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null).Result;
-            return shipWrappers.Select(shipWrapper => _unitOfWork.ShipRepository.GetAsync(x => x.Id == shipWrapper.ShipId).Result).ToList();
+            var shipWrappers = await _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null);
+            return shipWrappers.Select(shipWrapper => _unitOfWork.ShipRepository.GetAsync(x => x.Id == shipWrapper.ShipId).Result);
         }
 
-        public string GetSecondPlayerId(string playerId)
+        public async Task<string> GetSecondPlayerId(string playerId)
         {
-            var playerGame = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == playerId || x.SecondPlayerId == playerId).Result;
+            var playerGame = await _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == playerId || x.SecondPlayerId == playerId);
             var secondPlayerId = playerGame.FirstPlayerId;
             if (playerGame.FirstPlayerId == playerId)
             {
@@ -134,195 +130,236 @@ namespace Game.BLL.Helpers
             return secondPlayerId;
         }
 
-        public IEnumerable<Cell> GetAllCells(string shipDirectionName, int shipSize, int X, int Y, int fieldId)
+        public async Task<IEnumerable<Cell>> GetAllCells(string shipDirectionName, int shipSize, int X, int Y, int fieldId)
         {
             var cellListResult = new List<Cell>();
-            var shipWrapperDefault = _unitOfWork.ShipWrapperRepository.GetAsync(x => x.FieldId == fieldId && x.ShipId == null).Result;
 
-            var positionsDefault = _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperDefault.Id).Result;
+            var shipWrapperDefault = await _unitOfWork.ShipWrapperRepository.GetAsync(x => x.FieldId == fieldId && x.ShipId == null);
+            var positionsDefault = await _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperDefault.Id);
+            var allCellsWithStateNoEmpty = positionsDefault.Select(x => _unitOfWork.CellRepository.GetAsync(x.CellId).Result)
+                .Where(x => x.CellStateId == 2 || x.CellStateId == 5);
 
-            var cellList = positionsDefault.Select(x => _unitOfWork.CellRepository.GetAsync(x.CellId).Result);
-
-            for (int i = 0; i < shipSize; i++)
+            switch (shipDirectionName)
             {
-                if (shipDirectionName == "Vertical")
-                {
-                    var newCell = new Cell { X = X, Y = Y + i, CellStateId = 2 };
-                    if (newCell.Y > 10 || newCell.Y < 1)
+                case "Horizontal":
+                    var shipCells = new List<Cell>();
+
+                    switch (shipSize)
+                    {
+                        case 1:
+                            shipCells.AddRange(new List<Cell>
+                            {
+                                new Cell { X = X, Y = Y, CellStateId = 2 },
+                                new Cell { X = X, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 1, CellStateId = 5},
+                            });
+                            break;
+
+                        case 2:
+                            shipCells.AddRange(new List<Cell>
+                            {
+                                new Cell { X = X, Y = Y, CellStateId = 2 },
+                                new Cell {X = X + 1, Y = Y, CellStateId = 2},
+
+                                new Cell { X = X - 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 2, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 2, Y = Y, CellStateId = 5},
+                                new Cell { X = X + 2, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 1, CellStateId = 5},
+                            });
+                            break;
+
+                        case 3:
+                            shipCells.AddRange(new List<Cell>
+                            {
+                                new Cell { X = X, Y = Y, CellStateId = 2 },
+                                new Cell {X = X + 1, Y = Y, CellStateId = 2},
+                                new Cell {X = X + 2, Y = Y, CellStateId = 2 },
+
+                                new Cell { X = X - 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 2, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 3, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 3, Y = Y, CellStateId = 5},
+                                new Cell { X = X + 3, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X + 2, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 1, CellStateId = 5},
+                            });
+
+                            break;
+
+                        case 4:
+                            shipCells.AddRange(new List<Cell>
+                            {
+                                new Cell { X = X, Y = Y, CellStateId = 2 },
+                                new Cell {X = X + 1, Y = Y, CellStateId = 2},
+                                new Cell {X = X + 2, Y = Y, CellStateId = 2 },
+                                new Cell {X = X + 3, Y = Y, CellStateId = 2 },
+
+                                new Cell { X = X - 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 2, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 3, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 4, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 4, Y = Y, CellStateId = 5},
+                                new Cell { X = X + 4, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X + 3, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X + 2, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 1, CellStateId = 5},
+                            });
+
+                            break;
+                    }
+
+                    foreach (var _ in shipCells.Where(shipCell => shipCell.X < 1 || shipCell.X > 10)
+                        .Where(shipCell => shipCell.CellStateId == 2)
+                        .Select(shipCell => new { }))
                     {
                         throw new Exception("The ship is out of bounds!");
                     }
-                    var aroundNewCells = new List<Cell>();
-                    if (i == 0)
+
+                    foreach (var _ in allCellsWithStateNoEmpty
+                        .SelectMany(cell => shipCells.Where(shipCell => shipCell.CellStateId == 2 && cell.X == shipCell.X && cell.Y == shipCell.Y)
+                        .Select(shipCell => new { })))
                     {
-                        switch (shipSize)
-                        {
-                            case 1:
-                                aroundNewCells.AddRange(new List<Cell> {
-                                        new Cell { X = newCell.X, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 1, CellStateId = 5},
-                                    });
-                                break;
-
-                            case 2:
-                                aroundNewCells.AddRange(new List<Cell> {
-                                        new Cell { X = newCell.X, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 2, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y + 2, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 2, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y - 1, CellStateId = 5},
-                                    });
-                                break;
-                            case 3:
-                                aroundNewCells.AddRange(new List<Cell> {
-                                        new Cell { X = newCell.X, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 2, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 3, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y + 3, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 3, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 2, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y - 1, CellStateId = 5},
-                                    });
-                                break;
-                            case 4:
-                                aroundNewCells.AddRange(new List<Cell> {
-                                        new Cell { X = newCell.X, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 2, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 3, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 4, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y + 4, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 4, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 3, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 2, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y - 1, CellStateId = 5},
-                                    });
-                                break;
-                        };
-                    }
-
-                    var allCellsWithStateNoEmpty = cellList.Where(x => x.CellStateId == 2 || x.CellStateId == 5);
-
-                    foreach (var _ in allCellsWithStateNoEmpty.Where(cell => newCell.X == cell.X && newCell.Y == cell.Y).Select(cell => new { }))
-                    {
-                        aroundNewCells.Clear();
                         cellListResult.Clear();
                         break;
                     }
 
-                    cellListResult.AddRange(aroundNewCells.Where(arroundNewCell => !(arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10)));
-                    cellListResult.Add(newCell);
-                }
-                else if (shipDirectionName == "Horizontal")
-                {
-                    var newCell = new Cell { X = X + i, Y = Y, CellStateId = 2 };
-                    if (newCell.X < 1 || newCell.X > 10)
+                    cellListResult.AddRange(shipCells);
+                    break;
+
+                case "Vertical":
+                    shipCells = new List<Cell>();
+
+                    switch (shipSize)
+                    {
+                        case 1:
+                            shipCells.AddRange(new List<Cell>
+                            {
+                                new Cell { X = X, Y = Y, CellStateId = 2 },
+
+                                new Cell { X = X, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 1, CellStateId = 5},
+                            });
+
+                            break;
+
+                        case 2:
+                            shipCells.AddRange(new List<Cell>
+                            {
+                                new Cell { X = X, Y = Y, CellStateId = 2 },
+                                new Cell { X = X, Y = Y + 1, CellStateId = 2 },
+
+                                new Cell { X = X, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 2, CellStateId = 5},
+                                new Cell { X = X, Y = Y + 2, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 2, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y - 1, CellStateId = 5},
+                            });
+
+                            break;
+
+                        case 3:
+                            shipCells.AddRange(new List<Cell>
+                            {
+                                new Cell { X = X, Y = Y, CellStateId = 2 },
+                                new Cell { X = X, Y = Y + 1, CellStateId = 2 },
+                                new Cell { X = X, Y = Y + 2, CellStateId = 2 },
+
+                                new Cell { X = X, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 2, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 3, CellStateId = 5},
+                                new Cell { X = X, Y = Y + 3, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 3, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 2, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y - 1, CellStateId = 5},
+                            });
+
+                            break;
+
+                        case 4:
+                            shipCells.AddRange(new List<Cell>
+                            {
+                                new Cell { X = X, Y = Y, CellStateId = 2 },
+                                new Cell { X = X, Y = Y + 1, CellStateId = 2 },
+                                new Cell { X = X, Y = Y + 2, CellStateId = 2 },
+                                new Cell { X = X, Y = Y + 3, CellStateId = 2 },
+
+                                new Cell { X = X, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y - 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 2, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 3, CellStateId = 5},
+                                new Cell { X = X + 1, Y = Y + 4, CellStateId = 5},
+                                new Cell { X = X, Y = Y + 4, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 4, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 3, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 1, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y + 2, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y, CellStateId = 5},
+                                new Cell { X = X - 1, Y = Y - 1, CellStateId = 5},
+                            });
+
+                            break;
+                    }
+
+                    foreach (var _ in shipCells.Where(shipCell => shipCell.Y < 1 || shipCell.Y > 10)
+                        .Where(shipCell => shipCell.CellStateId == 2)
+                        .Select(shipCell => new { }))
                     {
                         throw new Exception("The ship is out of bounds!");
                     }
 
-                    var aroundNewCells = new List<Cell>();
-                    if (i == 0)
+                    foreach (var _ in allCellsWithStateNoEmpty
+                        .SelectMany(cell => shipCells.Where(shipCell => shipCell.CellStateId == 2 && cell.X == shipCell.X && cell.Y == shipCell.Y)
+                        .Select(shipCell => new { })))
                     {
-                        switch (shipSize)
-                        {
-                            case 1:
-                                aroundNewCells.AddRange(new List<Cell> {
-                                        new Cell { X = newCell.X, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 1, CellStateId = 5},
-                                    });
-                                break;
-                            case 2:
-                                aroundNewCells.AddRange(new List<Cell> {
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 2, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 2, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X + 2, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 1, CellStateId = 5},
-                                    });
-                                break;
-                            case 3:
-                                aroundNewCells.AddRange(new List<Cell> {
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 2, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 3, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 3, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X + 3, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 2, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 1, CellStateId = 5},
-                                    });
-                                break;
-                            case 4:
-                                aroundNewCells.AddRange(new List<Cell> {
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 2, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 3, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 4, Y = newCell.Y - 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 4, Y = newCell.Y, CellStateId = 5},
-                                        new Cell { X = newCell.X + 4, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 3, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 2, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X + 1, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X, Y = newCell.Y + 1, CellStateId = 5},
-                                        new Cell { X = newCell.X - 1, Y = newCell.Y + 1, CellStateId = 5},
-                                    });
-                                break;
-                        };
-                    }
-
-                    var allCellsWithStateNoEmpty = cellList.Where(x => x.CellStateId == 2 || x.CellStateId == 5);
-
-                    foreach (var _ in allCellsWithStateNoEmpty.Where(cell => newCell.X == cell.X && newCell.Y == cell.Y).Select(cell => new { }))
-                    {
-                        aroundNewCells.Clear();
                         cellListResult.Clear();
                         break;
                     }
-                    cellListResult.Add(newCell);
-                    cellListResult.AddRange(aroundNewCells.Where(arroundNewCell => !(arroundNewCell.X < 1 || arroundNewCell.X > 10 || arroundNewCell.Y < 1 || arroundNewCell.Y > 10)));
-                }
+
+                    cellListResult.AddRange(shipCells);
+                    break;
             }
 
-            return cellListResult;
+            return cellListResult.Where(cell => !(cell.X < 1 || cell.X > 10 || cell.Y < 1 || cell.Y > 10));
         }
     }
 }

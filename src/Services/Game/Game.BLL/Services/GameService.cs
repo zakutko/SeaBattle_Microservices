@@ -149,8 +149,8 @@ namespace Game.BLL.Services
             var gameId = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == firstPlayerId && x.SecondPlayerId == null).Result.GameId;
             var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == firstPlayerId).Result.Id;
             var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-            var ships = _gameServiceHelper.GetShipList(fieldId);
-            var cellList = _gameServiceHelper.GetCellList(fieldId);
+            var ships = _gameServiceHelper.GetShipList(fieldId).Result;
+            var cellList = _gameServiceHelper.GetCellList(fieldId).Result;
 
             if (cellList.Any())
             {
@@ -300,13 +300,10 @@ namespace Game.BLL.Services
             var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
 
             var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == playerId).Result.Id;
-            var cellList = _gameServiceHelper.GetCellList(fieldId).OrderBy(x => x.Id);
-
+            var cellList = _gameServiceHelper.GetCellList(fieldId).Result.OrderBy(x => x.Id);
             return cellList.Select(_mapper.Map<CellListResponse>);
         }
 
-
-        //TODO: ~20 seconds (need to speed up this method and GetAllCells method in gameservicehelper)
         public CreateShipResponse CreateShipOnField(CreateShipRequest createShipRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(createShipRequest.Token);
@@ -359,7 +356,6 @@ namespace Game.BLL.Services
             //add ship to Ship table
             var newShip = new Ship { DirectionId = createShipRequest.ShipDirection, ShipStateId = 1, ShipSizeId = createShipRequest.ShipSize };
             _unitOfWork.ShipRepository.Create(newShip);
-            _unitOfWork.Commit();
 
             //add shipWrapper to ShipWrapper table
             var shipWrapper = new ShipWrapper { ShipId = newShip.Id, FieldId = fieldId };
@@ -369,8 +365,7 @@ namespace Game.BLL.Services
             var shipDirectionName = _unitOfWork.DirectionRepository.GetAsync(createShipRequest.ShipDirection).Result.DirectionName;
             try
             {
-                var cellListResult = _gameServiceHelper.GetAllCells(shipDirectionName, createShipRequest.ShipSize, createShipRequest.X, createShipRequest.Y, fieldId);
-
+                var cellListResult = _gameServiceHelper.GetAllCells(shipDirectionName, createShipRequest.ShipSize, createShipRequest.X, createShipRequest.Y, fieldId).Result;
                 if (!cellListResult.Any())
                 {
                     _unitOfWork.ShipWrapperRepository.Delete(shipWrapper);
@@ -378,38 +373,37 @@ namespace Game.BLL.Services
                     _unitOfWork.Commit();
                 }
 
+                var cells = _gameServiceHelper.GetCellList(fieldId).Result;
+
                 foreach (var cell in cellListResult)
                 {
-                    var shipWrappersResult = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-                    var positionsResult = shipWrappersResult.SelectMany(shipWrapperItem => _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperItem.Id).Result);
-                    var cellIdsResult = positionsResult.Select(position => position.CellId);
-                    var cells = cellIdsResult.Select(id => _unitOfWork.CellRepository.GetAsync(x => x.Id == id).Result);
+                    var defaultCell = cells.Where(x => x.X == cell.X && x.Y == cell.Y).First();
 
-                    //update cells in Cell table
-                    var defaultCell = cells.Where(x => x.X == cell.X && x.Y == cell.Y).FirstOrDefault();
-
-                    if (defaultCell?.CellStateId == 2)
+                    if (defaultCell.CellStateId == 2)
                     {
                        throw new Exception("One of Cells is busy!");
                     }
-
-                    var updateCell = new Cell { Id = defaultCell.Id, X = cell.X, Y = cell.Y, CellStateId = cell.CellStateId };
-                    _unitOfWork.ClearChangeTracker();
-                    _unitOfWork.CellRepository.Update(updateCell);
-                    _unitOfWork.Commit();
-
-                    //update positions in Position table
-                    var positionId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == defaultCell.Id).Result.Id;
-                    var updatePosition = new Position
+                    else if(defaultCell.CellStateId == 5)
                     {
-                        Id = positionId,
-                        ShipWrapperId = shipWrapper.Id,
-                        CellId = defaultCell.Id
-                    };
+                        continue;
+                    }
+                    else
+                    {
+                        _unitOfWork.ClearChangeTracker();
+                        _unitOfWork.CellRepository.Update(new Cell { Id = defaultCell.Id, X = cell.X, Y = cell.Y, CellStateId = cell.CellStateId });
 
-                    _unitOfWork.ClearChangeTracker();
-                    _unitOfWork.PositionRepository.Update(updatePosition);
-                    _unitOfWork.Commit();
+                        //update positions in Position table
+                        var positionId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == defaultCell.Id).Result.Id;
+                        var updatePosition = new Position
+                        {
+                            Id = positionId,
+                            ShipWrapperId = shipWrapper.Id,
+                            CellId = defaultCell.Id
+                        };
+
+                        _unitOfWork.PositionRepository.Update(updatePosition);
+                        _unitOfWork.Commit();
+                    }
                 }
             }
             catch (Exception ex)
@@ -506,7 +500,7 @@ namespace Game.BLL.Services
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(cellListRequestForSecondPlayer.Token);
             var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
 
-            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(playerId);
+            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(playerId).Result;
 
             if (secondPlayerId == null)
             {
@@ -514,7 +508,7 @@ namespace Game.BLL.Services
             }
 
             var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
-            var cellList = _gameServiceHelper.GetCellList(fieldId).OrderBy(x => x.Id);
+            var cellList = _gameServiceHelper.GetCellList(fieldId).Result.OrderBy(x => x.Id);
 
             return cellList.Select(_mapper.Map<CellListResponseForSecondPlayer>);
         }
@@ -523,10 +517,10 @@ namespace Game.BLL.Services
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(shootRequest.Token);
             var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
-            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(playerId);
+            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(playerId).Result;
 
             var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
-            var cellList = _gameServiceHelper.GetCellList(fieldId);
+            var cellList = _gameServiceHelper.GetCellList(fieldId).Result;
 
             var myCell = cellList.Where(x => x.X == shootRequest.X && x.Y == shootRequest.Y).FirstOrDefault();
 
@@ -594,17 +588,17 @@ namespace Game.BLL.Services
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(isEndOfTheGameRequest.Token);
             var firstPlayerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
             var firstFieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == firstPlayerId).Result.Id;
-            var firstCellList = _gameServiceHelper.GetCellList(firstFieldId);
+            var firstCellList = _gameServiceHelper.GetCellList(firstFieldId).Result;
 
             var gameId = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == firstPlayerId || x.SecondPlayerId == firstPlayerId).Result.GameId;
 
-            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(firstPlayerId);
+            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(firstPlayerId).Result;
             if (secondPlayerId == null)
             {
                 return new IsEndOfTheGameResponse { IsEndOfTheGame = false, WinnerUserName = "" };
             }
             var secondFieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
-            var secondCellList = _gameServiceHelper.GetCellList(secondFieldId);
+            var secondCellList = _gameServiceHelper.GetCellList(secondFieldId).Result;
 
             var gameStateId = _unitOfWork.GameRepository.GetAsync(gameId).Result.GameStateId;
             var firstCellsWithStateBusyOrHit = _gameServiceHelper.CheckIsCellsWithStateBusyOrHit(firstCellList, gameStateId);
@@ -675,17 +669,17 @@ namespace Game.BLL.Services
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(clearingDBRequest.Token);
             var firstPlayerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
-            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(firstPlayerId);
+            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(firstPlayerId).Result;
 
             var firstFieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == firstPlayerId).Result.Id;
-            var firstCellList = _gameServiceHelper.GetCellList(firstFieldId);
+            var firstCellList = _gameServiceHelper.GetCellList(firstFieldId).Result;
             var firstShipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == firstFieldId).Result;
-            var firstShips = _gameServiceHelper.GetShipList(firstFieldId);
+            var firstShips = _gameServiceHelper.GetShipList(firstFieldId).Result;
 
             var secondFieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
-            var secondCellList = _gameServiceHelper.GetCellList(secondFieldId);
+            var secondCellList = _gameServiceHelper.GetCellList(secondFieldId).Result;
             var secondShipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == secondFieldId).Result;
-            var secondShips = _gameServiceHelper.GetShipList(secondFieldId);
+            var secondShips = _gameServiceHelper.GetShipList(secondFieldId).Result;
 
             if (secondCellList.Any())
             {

@@ -2,7 +2,6 @@
 using Game.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Game.DAL.Repositories
 {

@@ -9,9 +9,9 @@ namespace Game.BLL.Interfaces
         bool CheckIsCellsWithStateBusyOrHit(IEnumerable<Cell>? cells, int gameStateId);
         string GetUsernameByDecodingJwtToken(string token);
         AppUser CreateNewAppUser(AppUser appUser, bool? isHit);
-        IEnumerable<Cell> GetCellList(int fieldId);
-        IEnumerable<Ship> GetShipList(int fieldId);
-        string GetSecondPlayerId(string playerId);
-        IEnumerable<Cell> GetAllCells(string shipDirectionName, int shipSize, int X, int Y, int fieldId);
+        Task<IEnumerable<Cell>> GetCellList(int fieldId);
+        Task<IEnumerable<Ship>> GetShipList(int fieldId);
+        Task<string> GetSecondPlayerId(string playerId);
+        Task<IEnumerable<Cell>> GetAllCells(string shipDirectionName, int shipSize, int X, int Y, int fieldId);
     }
 }
