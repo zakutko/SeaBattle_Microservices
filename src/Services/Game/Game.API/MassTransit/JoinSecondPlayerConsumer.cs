@@ -17,7 +17,7 @@ namespace Game.API.MassTransit
         {
             try
             {
-                _gameService.JoinSecondPlayer(context.Message);
+                await _gameService.JoinSecondPlayer(context.Message);
                 await context.RespondAsync(new JoinSecondPlayerResponse { Message = "Join second player was successful!" });
             }
             catch

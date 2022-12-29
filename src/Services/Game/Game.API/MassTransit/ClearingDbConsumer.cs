@@ -15,7 +15,7 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<ClearingDBRequest> context)
         {
-            var result = _gameService.ClearingDB(context.Message);
+            var result = await _gameService.ClearingDB(context.Message);
 
             await context.RespondAsync(result);
         }

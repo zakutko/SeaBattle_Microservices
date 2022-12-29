@@ -4,20 +4,19 @@ namespace Game.BLL.Interfaces
 {
     public interface IGameService
     {
-        IEnumerable<GameListResponse> GetAllGames(GameListRequest gameListRequest);
-        void CreateGame(CreateGameRequest createGameRequest);
-        IsGameOwnerResponse IsGameOwner(IsGameOwnerRequest isGameOwnerRequest);
-        void DeleteGame(DeleteGameRequest deleteGameRequest);
-        void JoinSecondPlayer(JoinSecondPlayerRequest joinSecondPlayerRequest);
-        IEnumerable<CellListResponse> GetAllCells(CellListRequest cellListRequest);
-        CreateShipResponse CreateShipOnField(CreateShipRequest createShipRequest);
-        IsPlayerReadyResponse SetPlayerReady(IsPlayerReadyRequest isPlayerReadyRequest);
-        IsTwoPlayersReadyResponse IsTwoPlayersReady(IsTwoPlayersReadyRequest isTwoPlayersReadyRequest);
-        IEnumerable<CellListResponseForSecondPlayer> GetAllCellForSecondPlayer(CellListRequestForSecondPlayer cellListRequestForSecondPlayer);
-        ShootResponse Fire(ShootRequest shootRequest);
-        HitResponse GetPriority(HitRequest hitRequest);
-        IsEndOfTheGameResponse IsEndOfTheGame(IsEndOfTheGameRequest isEndOfTheGameRequest);
-        ClearingDBResponse ClearingDB(ClearingDBRequest clearingDBRequest);
-
+        Task<IEnumerable<GameListResponse>> GetAllGames(GameListRequest gameListRequest);
+        Task CreateGame(CreateGameRequest createGameRequest);
+        Task<IsGameOwnerResponse> IsGameOwner(IsGameOwnerRequest isGameOwnerRequest);
+        Task DeleteGame(DeleteGameRequest deleteGameRequest);
+        Task JoinSecondPlayer(JoinSecondPlayerRequest joinSecondPlayerRequest);
+        Task<IEnumerable<CellListResponse>> GetAllCells(CellListRequest cellListRequest);
+        Task<CreateShipResponse> CreateShipOnField(CreateShipRequest createShipRequest);
+        Task<IsPlayerReadyResponse> SetPlayerReady(IsPlayerReadyRequest isPlayerReadyRequest);
+        Task<IsTwoPlayersReadyResponse> IsTwoPlayersReady(IsTwoPlayersReadyRequest isTwoPlayersReadyRequest);
+        Task<IEnumerable<CellListResponseForSecondPlayer>> GetAllCellForSecondPlayer(CellListRequestForSecondPlayer cellListRequestForSecondPlayer);
+        Task<ShootResponse> Fire(ShootRequest shootRequest);
+        Task<HitResponse> GetPriority(HitRequest hitRequest);
+        Task<IsEndOfTheGameResponse> IsEndOfTheGame(IsEndOfTheGameRequest isEndOfTheGameRequest);
+        Task<ClearingDBResponse> ClearingDB(ClearingDBRequest clearingDBRequest);
     }
 }

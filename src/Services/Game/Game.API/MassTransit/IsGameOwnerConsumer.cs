@@ -15,9 +15,7 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<IsGameOwnerRequest> context)
         {
-            var result = _gameService.IsGameOwner(context.Message);
-
-            await context.RespondAsync(result);
+            await context.RespondAsync(await _gameService.IsGameOwner(context.Message));
         }
     }
 }

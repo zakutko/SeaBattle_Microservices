@@ -15,7 +15,7 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<IsTwoPlayersReadyRequest> context)
         {
-                var result = _gameService.IsTwoPlayersReady(context.Message);
+                var result = await _gameService.IsTwoPlayersReady(context.Message);
 
                 await context.RespondAsync(result);
         }

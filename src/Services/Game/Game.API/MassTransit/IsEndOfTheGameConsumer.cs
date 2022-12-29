@@ -15,7 +15,7 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<IsEndOfTheGameRequest> context)
         {
-            var result = _gameService.IsEndOfTheGame(context.Message);
+            var result = await _gameService.IsEndOfTheGame(context.Message);
 
             await context.RespondAsync(result);
         }

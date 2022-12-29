@@ -1,7 +1,6 @@
 ﻿using Game.BLL.Interfaces;
 using MassTransit;
 using SeaBattle.Contracts.Dtos;
-using static MassTransit.ValidationResultExtensions;
 
 namespace Game.API.MassTransit
 {
@@ -16,7 +15,7 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<IsPlayerReadyRequest> context)
         {
-                var result = _gameService.SetPlayerReady(context.Message);
+                var result = await _gameService.SetPlayerReady(context.Message);
                 await context.RespondAsync(result);
         }
     }

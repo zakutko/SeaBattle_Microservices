@@ -17,7 +17,7 @@ namespace Game.API.MassTransit
         {
             try
             {
-                _gameService.CreateGame(context.Message);
+                await _gameService.CreateGame(context.Message);
                 await context.RespondAsync(new CreateGameResponse { Message = "Game creation successful!" });
             }
             catch

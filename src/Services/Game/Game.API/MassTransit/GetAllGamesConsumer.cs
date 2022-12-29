@@ -16,7 +16,7 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<GameListRequest> context)
         {
-            var result = _gameService.GetAllGames(context.Message);
+            var result = await _gameService.GetAllGames(context.Message);
             var gameList = new GameListResponseList { GameListResponses = result };
 
             await context.RespondAsync(gameList);

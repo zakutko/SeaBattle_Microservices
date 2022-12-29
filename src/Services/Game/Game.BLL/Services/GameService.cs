@@ -11,26 +11,65 @@ namespace Game.BLL.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IGameServiceHelper _gameServiceHelper;
         private readonly IMapper _mapper;
+        private readonly IRepository<DAL.Models.Game> _gameRepository;
+        private readonly IRepository<PlayerGame> _playerGameRepository;
+        private readonly IRepository<AppUser> _appUserRepository;
+        private readonly IRepository<GameState> _gameStateRepository;
+        private readonly IRepository<Field> _fieldRepository;
+        private readonly IRepository<GameField> _gameFieldRepository;
+        private readonly IRepository<ShipWrapper> _shipWrapperRepository;
+        private readonly IRepository<Ship> _shipRepository;
+        private readonly IRepository<Position> _positionRepository;
+        private readonly IRepository<Cell> _cellRepository;
+        private readonly IRepository<Direction> _directionRepository;
+        private readonly IRepository<GameHistory> _gameHistoryRepository;
 
-        public GameService(IUnitOfWork unitOfWork, IGameServiceHelper gameServiceHelper, IMapper mapper)
+        public GameService(
+            IUnitOfWork unitOfWork, 
+            IGameServiceHelper gameServiceHelper, 
+            IMapper mapper,
+            IRepository<DAL.Models.Game> gameRepository,
+            IRepository<PlayerGame> playerGameRepository,
+            IRepository<AppUser> appUserRepository,
+            IRepository<GameState> gameStateRepository,
+            IRepository<Field> fieldRepository,
+            IRepository<GameField> gameFieldRepository,
+            IRepository<ShipWrapper> shipWrapperRepository,
+            IRepository<Ship> shipRepository,
+            IRepository<Position> positionRepository,
+            IRepository<Cell> cellRepository,
+            IRepository<Direction> directionRepository,
+            IRepository<GameHistory> gameHistoryRepository)
         {
             _unitOfWork = unitOfWork;
             _gameServiceHelper = gameServiceHelper;
             _mapper = mapper;
+            _gameRepository = gameRepository;
+            _playerGameRepository = playerGameRepository;
+            _appUserRepository = appUserRepository;
+            _gameStateRepository = gameStateRepository;
+            _fieldRepository = fieldRepository;
+            _gameFieldRepository = gameFieldRepository;
+            _shipWrapperRepository = shipWrapperRepository;
+            _shipRepository = shipRepository;
+            _positionRepository = positionRepository;
+            _cellRepository = cellRepository;
+            _directionRepository = directionRepository;
+            _gameHistoryRepository = gameHistoryRepository;
         }
 
-        public IEnumerable<GameListResponse> GetAllGames(GameListRequest gameListRequest)
+        public async Task<IEnumerable<GameListResponse>> GetAllGames(GameListRequest gameListRequest)
         {
-            var playerGameList = _unitOfWork.PlayerGameRepository.GetAllAsync().Result;
+            var playerGameList = await _playerGameRepository.GetAllAsync();
 
             var playerGameResponseList = new List<GameListResponse>();
 
             foreach (var playerGame in playerGameList)
             {
-                var game = _unitOfWork.GameRepository.GetAsync(playerGame.GameId).Result;
-                var firstPlayer = _unitOfWork.AppUserRepository.GetAsync(playerGame.FirstPlayerId).Result;
-                var secondPlayer = _unitOfWork.AppUserRepository.GetAsync(playerGame.SecondPlayerId).Result;
-                var gameState = _unitOfWork.GameStateRepository.GetAsync(game.GameStateId).Result.GameStateName;
+                var game = await _gameRepository.GetAsync(playerGame.GameId);
+                var firstPlayer = await _appUserRepository.GetAsync(playerGame.FirstPlayerId);
+                var secondPlayer = await _appUserRepository.GetAsync(playerGame.SecondPlayerId);
+                var gameState = await _gameStateRepository.GetAsync(game.GameStateId);
 
                 var numberOfPlayers = 2;
                 if (secondPlayer == null)
@@ -43,7 +82,7 @@ namespace Game.BLL.Services
                     Id = game.Id,
                     FirstPlayer = firstPlayer.UserName,
                     SecondPlayer = secondPlayer?.UserName,
-                    GameState = gameState,
+                    GameState = gameState.GameStateName,
                     NumberOfPlayers = numberOfPlayers
                 });
             }
@@ -54,58 +93,58 @@ namespace Game.BLL.Services
             return playerGameResponseListWithoutCurrUser;
         }
 
-        public void CreateGame(CreateGameRequest createGameRequest)
+        public async Task CreateGame(CreateGameRequest createGameRequest)
         {
             var game = new DAL.Models.Game { GameStateId = 1 };
-            _unitOfWork.GameRepository.Create(game);
+            await _gameRepository.Create(game);
             _unitOfWork.Commit();
             var gameId = game.Id;
 
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(createGameRequest.Token);
-            var appUser = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username && x.NormalizedUserName == username.ToUpper()).Result;
+            var appUser = await _appUserRepository.GetAsync(x => x.UserName == username && x.NormalizedUserName == username.ToUpper());
             var newAppUser = _gameServiceHelper.CreateNewAppUser(appUser, true);
 
             _unitOfWork.ClearChangeTracker();
-            _unitOfWork.AppUserRepository.Update(newAppUser);
+            _appUserRepository.Update(newAppUser);
             _unitOfWork.Commit();
 
             var playerGame = new PlayerGame { GameId = gameId, FirstPlayerId = appUser.Id };
-            _unitOfWork.PlayerGameRepository.Create(playerGame);
+            await _playerGameRepository.Create(playerGame);
             _unitOfWork.Commit();
 
             var field = new Field { Size = 10, PlayerId = appUser.Id };
-            _unitOfWork.FieldRepository.Create(field);
+            await _fieldRepository.Create(field);
             _unitOfWork.Commit();
             var fieldId = field.Id;
 
             var gameField = new GameField { FirstFieldId = fieldId, GameId = gameId };
-            _unitOfWork.GameFieldRepository.Create(gameField);
+            await _gameFieldRepository.Create(gameField);
             _unitOfWork.Commit();
 
-            var numberOfShipsOnField = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null).Result.Count();
-            if (numberOfShipsOnField == 0)
+            var numberOfShipsOnField = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null);
+            if (numberOfShipsOnField.Count() == 0)
             {
                 var defaultCells = _gameServiceHelper.SetDafaultCells();
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.CellRepository.UpdateRange(defaultCells);
+                _cellRepository.UpdateRange(defaultCells);
                 _unitOfWork.Commit();
 
                 var defaultShipWrapper = new ShipWrapper { FieldId = fieldId };
-                _unitOfWork.ShipWrapperRepository.Create(defaultShipWrapper);
+                await _shipWrapperRepository.Create(defaultShipWrapper);
                 _unitOfWork.Commit();
 
                 var defaultPositions = defaultCells.Select(cell => new Position { ShipWrapperId = defaultShipWrapper.Id, CellId = cell.Id });
-                _unitOfWork.PositionRepository.CreateRange(defaultPositions);
+                await _positionRepository.CreateRange(defaultPositions);
                 _unitOfWork.Commit();
             }
         }
 
-        public IsGameOwnerResponse IsGameOwner(IsGameOwnerRequest isGameOwnerRequest)
+        public async Task<IsGameOwnerResponse> IsGameOwner(IsGameOwnerRequest isGameOwnerRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(isGameOwnerRequest.Token);
-            var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
+            var player = await _appUserRepository.GetAsync(x => x.UserName == username);
 
-            var playerGame = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == playerId || x.SecondPlayerId == playerId).Result;
+            var playerGame = await _playerGameRepository.GetAsync(x => x.FirstPlayerId == player.Id || x.SecondPlayerId == player.Id);
 
             if (playerGame == null)
             {
@@ -117,13 +156,13 @@ namespace Game.BLL.Services
             }
 
             var isGameOwner = false;
-            if (playerGame.FirstPlayerId == playerId)
+            if (playerGame.FirstPlayerId == player.Id)
             {
                 isGameOwner = true;
             }
 
             var isSecondPlayerConnected = true;
-            if (playerGame.FirstPlayerId == playerId && playerGame.SecondPlayerId == null)
+            if (playerGame.FirstPlayerId == player.Id && playerGame.SecondPlayerId == null)
             {
                 isSecondPlayerConnected = false;
             }
@@ -135,105 +174,105 @@ namespace Game.BLL.Services
             };
         }
 
-        public void DeleteGame(DeleteGameRequest deleteGameRequest)
+        public async Task DeleteGame(DeleteGameRequest deleteGameRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(deleteGameRequest.Token);
-            var firstPlayerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
+            var firstPlayer = await _appUserRepository.GetAsync(x => x.UserName == username);
 
-            var gameId = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == firstPlayerId && x.SecondPlayerId == null).Result.GameId;
-            var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == firstPlayerId).Result.Id;
-            var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
-            var ships = _gameServiceHelper.GetShipList(fieldId).Result;
-            var cellList = _gameServiceHelper.GetCellList(fieldId).Result;
+            var playerGame = await _playerGameRepository.GetAsync(x => x.FirstPlayerId == firstPlayer.Id && x.SecondPlayerId == null);
+            var field = await _fieldRepository.GetAsync(x => x.PlayerId == firstPlayer.Id);
+            var shipWrappers = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == field.Id);
+            var ships = await _gameServiceHelper.GetShipList(field.Id);
+            var cellList = await _gameServiceHelper.GetCellList(field.Id);
 
             if (cellList.Any())
             {
                 //delete all shipWrappers
-                _unitOfWork.ShipWrapperRepository.DeleteRange(shipWrappers);
+                _shipWrapperRepository.DeleteRange(shipWrappers);
                 _unitOfWork.Commit();
 
                 //delete all ships
-                _unitOfWork.ShipRepository.DeleteRange(ships);
+                _shipRepository.DeleteRange(ships);
                 _unitOfWork.Commit();
 
                 //delete all cells
-                _unitOfWork.CellRepository.DeleteRange(cellList);
+                _cellRepository.DeleteRange(cellList);
                 _unitOfWork.Commit();
 
                 //update appUser
-                var appUser = _unitOfWork.AppUserRepository.GetAsync(firstPlayerId).Result;
+                var appUser = await _appUserRepository.GetAsync(firstPlayer.Id);
                 var newAppUser = _gameServiceHelper.CreateNewAppUser(appUser, null);
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.AppUserRepository.Update(newAppUser);
+                _appUserRepository.Update(newAppUser);
                 _unitOfWork.Commit();
 
                 //delete game from table Game
-                var game = _unitOfWork.GameRepository.GetAsync(x => x.Id == gameId).Result;
-                _unitOfWork.GameRepository.Delete(game);
+                var deletedGame = await _gameRepository.GetAsync(x => x.Id == playerGame.GameId);
+                _gameRepository.Delete(deletedGame);
                 _unitOfWork.Commit();
 
                 //delete field from table Field
-                var field = _unitOfWork.FieldRepository.GetAsync(x => x.Id == fieldId).Result;
-                _unitOfWork.FieldRepository.Delete(field);
+                var deletedField = await _fieldRepository.GetAsync(x => x.Id == field.Id);
+                _fieldRepository.Delete(deletedField);
                 _unitOfWork.Commit();
             }
             else
             {
                 //delete game from table Game
-                _unitOfWork.GameRepository.Delete(_unitOfWork.GameRepository.GetAsync(gameId).Result);
+                _gameRepository.Delete(await _gameRepository.GetAsync(playerGame.Id));
                 _unitOfWork.Commit();
 
                 //delete field from table Field
-                _unitOfWork.FieldRepository.Delete(_unitOfWork.FieldRepository.GetAsync(fieldId).Result);
+                _fieldRepository.Delete(await _fieldRepository.GetAsync(field.Id));
                 _unitOfWork.Commit();
 
                 //update appUser
-                var appUser = _unitOfWork.AppUserRepository.GetAsync(firstPlayerId).Result;
+                var appUser = await _appUserRepository.GetAsync(firstPlayer.Id);
                 var newAppUser = _gameServiceHelper.CreateNewAppUser(appUser, null);
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.AppUserRepository.Update(newAppUser);
+                _appUserRepository.Update(newAppUser);
                 _unitOfWork.Commit();
             }
         }
 
-        public void JoinSecondPlayer(JoinSecondPlayerRequest joinSecondPlayerRequest)
+        public async Task JoinSecondPlayer(JoinSecondPlayerRequest joinSecondPlayerRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(joinSecondPlayerRequest.Token);
 
-            var secondPlayerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
-            var firstPlayerId = _unitOfWork.PlayerGameRepository.GetAsync(x => x.GameId == joinSecondPlayerRequest.GameId).Result.FirstPlayerId;
+            var secondPlayer = await _appUserRepository.GetAsync(x => x.UserName == username);
+            var defauldPlayerGame = await _playerGameRepository.GetAsync(x => x.GameId == joinSecondPlayerRequest.GameId);
 
-            var playerGame = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == firstPlayerId && x.SecondPlayerId == null).Result;
+            var playerGame = _playerGameRepository.GetAsync(x => x.FirstPlayerId == defauldPlayerGame.FirstPlayerId && x.SecondPlayerId == null).Result;
 
-            var firstFieldId = _unitOfWork.GameFieldRepository.GetAsync(x => x.GameId == joinSecondPlayerRequest.GameId).Result.FirstFieldId;
-            var gameFieldId = _unitOfWork.GameFieldRepository.GetAsync(x => x.GameId == joinSecondPlayerRequest.GameId && x.FirstFieldId == firstFieldId).Result.Id;
+            var defaultGameField = await _gameFieldRepository.GetAsync(x => x.GameId == joinSecondPlayerRequest.GameId);
+            var gameField = await _gameFieldRepository.GetAsync(x => x.GameId == joinSecondPlayerRequest.GameId && x.FirstFieldId == defaultGameField.FirstFieldId);
 
             //update table AppUser
-            var appUser = _unitOfWork.AppUserRepository.GetAsync(secondPlayerId).Result;
+            var appUser = await _appUserRepository.GetAsync(secondPlayer.Id);
             var newAppUser = _gameServiceHelper.CreateNewAppUser(appUser, false);
             _unitOfWork.ClearChangeTracker();
-            _unitOfWork.AppUserRepository.Update(newAppUser);
+            _appUserRepository.Update(newAppUser);
             _unitOfWork.Commit();
 
             //update table Game
-            var game = _unitOfWork.GameRepository.GetAsync(joinSecondPlayerRequest.GameId).Result;
+            var game = await _gameRepository.GetAsync(joinSecondPlayerRequest.GameId);
             var newGame = new DAL.Models.Game
             {
                 Id = game.Id,
                 GameStateId = 2
             };
             _unitOfWork.ClearChangeTracker();
-            _unitOfWork.GameRepository.Update(newGame);
+            _gameRepository.Update(newGame);
             _unitOfWork.Commit();
 
             //update table Field
             var newField = new Field()
             {
                 Size = 10,
-                PlayerId = secondPlayerId
+                PlayerId = secondPlayer.Id
             };
             _unitOfWork.ClearChangeTracker();
-            _unitOfWork.FieldRepository.Create(newField);
+            await _fieldRepository.Create(newField);
             _unitOfWork.Commit();
             var fieldId = newField.Id;
 
@@ -243,70 +282,70 @@ namespace Game.BLL.Services
                 Id = playerGame.Id,
                 GameId = playerGame.GameId,
                 FirstPlayerId = playerGame.FirstPlayerId,
-                SecondPlayerId = secondPlayerId,
+                SecondPlayerId = secondPlayer.Id,
                 IsReadyFirstPlayer = playerGame.IsReadyFirstPlayer,
                 IsReadySecondPlayer = playerGame.IsReadySecondPlayer
             };
             _unitOfWork.ClearChangeTracker();
-            _unitOfWork.PlayerGameRepository.Update(newPlayerGame);
+            _playerGameRepository.Update(newPlayerGame);
             _unitOfWork.Commit();
 
             //update table GameField
             var newGameField = new GameField()
             {
-                Id = gameFieldId,
-                FirstFieldId = firstFieldId,
+                Id = gameField.Id,
+                FirstFieldId = defaultGameField.FirstFieldId,
                 SecondFieldId = newField.Id,
                 GameId = joinSecondPlayerRequest.GameId
             };
             _unitOfWork.ClearChangeTracker();
-            _unitOfWork.GameFieldRepository.Update(newGameField);
+            _gameFieldRepository.Update(newGameField);
             _unitOfWork.Commit();
 
-            var numberOfShipsOnField = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null).Result.Count();
-            if (numberOfShipsOnField == 0)
+            var numberOfShipsOnField = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null);
+            if (numberOfShipsOnField.Count() == 0)
             {
                 var defaultCells = _gameServiceHelper.SetDafaultCells();
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.CellRepository.UpdateRange(defaultCells);
+                _cellRepository.UpdateRange(defaultCells);
                 _unitOfWork.Commit();
 
                 var defaultShipWrapper = new ShipWrapper { FieldId = fieldId };
-                _unitOfWork.ShipWrapperRepository.Create(defaultShipWrapper);
+                await _shipWrapperRepository.Create(defaultShipWrapper);
                 _unitOfWork.Commit();
 
                 var defaultPositions = (defaultCells.Select(cell => new Position { ShipWrapperId = defaultShipWrapper.Id, CellId = cell.Id })).ToList();
-                _unitOfWork.PositionRepository.CreateRange(defaultPositions);
+                await _positionRepository.CreateRange(defaultPositions);
                 _unitOfWork.Commit();
             }
         }
 
-        public IEnumerable<CellListResponse> GetAllCells(CellListRequest cellListRequest)
+        public async Task<IEnumerable<CellListResponse>> GetAllCells(CellListRequest cellListRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(cellListRequest.Token);
-            var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
+            var player = await _appUserRepository.GetAsync(x => x.UserName == username);
 
-            var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == playerId).Result.Id;
-            var cellList = _gameServiceHelper.GetCellList(fieldId).Result.OrderBy(x => x.Id);
+            var field = await _fieldRepository.GetAsync(x => x.PlayerId == player.Id);
+            var cellList = _gameServiceHelper.GetCellList(field.Id).Result.OrderBy(x => x.Id);
             return cellList.Select(_mapper.Map<CellListResponse>);
         }
 
-        public CreateShipResponse CreateShipOnField(CreateShipRequest createShipRequest)
+        public async Task<CreateShipResponse> CreateShipOnField(CreateShipRequest createShipRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(createShipRequest.Token);
-            var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
+            var player = await _appUserRepository.GetAsync(x => x.UserName == username);
 
-            var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == playerId).Result.Id;
+            var field = await _fieldRepository.GetAsync(x => x.PlayerId == player.Id);
 
-            var numberOfShipsOnField = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null).Result.Count();
-            if (numberOfShipsOnField == 10)
+            var numberOfShipsOnField = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == field.Id && x.ShipId != null);
+            if (numberOfShipsOnField.Count() == 10)
             {
                 return new CreateShipResponse { Message = "There are already 10 ships on the field!" };
             }
 
-            var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
+            var shipWrappers = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == field.Id);
 
-            var ships = shipWrappers.SelectMany(shipWrapperItem => _unitOfWork.ShipRepository.GetAllAsync(x => x.Id == shipWrapperItem.ShipId).Result);
+            var ships = shipWrappers.SelectMany(shipWrapperItem => _shipRepository.GetAllAsync(x => x.Id == shipWrapperItem.ShipId).Result);
 
             switch (createShipRequest.ShipSize)
             {
@@ -342,25 +381,26 @@ namespace Game.BLL.Services
 
             //add ship to Ship table
             var newShip = new Ship { DirectionId = createShipRequest.ShipDirection, ShipStateId = 1, ShipSizeId = createShipRequest.ShipSize };
-            _unitOfWork.ShipRepository.Create(newShip);
-
-            //add shipWrapper to ShipWrapper table
-            var shipWrapper = new ShipWrapper { ShipId = newShip.Id, FieldId = fieldId };
-            _unitOfWork.ShipWrapperRepository.Create(shipWrapper);
+            await _shipRepository.Create(newShip);
             _unitOfWork.Commit();
 
-            var shipDirectionName = _unitOfWork.DirectionRepository.GetAsync(createShipRequest.ShipDirection).Result.DirectionName;
+            //add shipWrapper to ShipWrapper table
+            var shipWrapper = new ShipWrapper { ShipId = newShip.Id, FieldId = field.Id };
+            await _shipWrapperRepository.Create(shipWrapper);
+            _unitOfWork.Commit();
+
+            var direction = await _directionRepository.GetAsync(createShipRequest.ShipDirection);
             try
             {
-                var cellListResult = _gameServiceHelper.GetAllCells(shipDirectionName, createShipRequest.ShipSize, createShipRequest.X, createShipRequest.Y, fieldId).Result;
+                var cellListResult = _gameServiceHelper.GetAllCells(direction.DirectionName, createShipRequest.ShipSize, createShipRequest.X, createShipRequest.Y, field.Id).Result;
                 if (!cellListResult.Any())
                 {
-                    _unitOfWork.ShipWrapperRepository.Delete(shipWrapper);
-                    _unitOfWork.ShipRepository.Delete(newShip);
+                    _shipWrapperRepository.Delete(shipWrapper);
+                    _shipRepository.Delete(newShip);
                     _unitOfWork.Commit();
                 }
 
-                var cells = _gameServiceHelper.GetCellList(fieldId).Result;
+                var cells = await _gameServiceHelper.GetCellList(field.Id);
 
                 foreach (var cell in cellListResult)
                 {
@@ -377,26 +417,28 @@ namespace Game.BLL.Services
                     else
                     {
                         _unitOfWork.ClearChangeTracker();
-                        _unitOfWork.CellRepository.Update(new Cell { Id = defaultCell.Id, X = cell.X, Y = cell.Y, CellStateId = cell.CellStateId });
+                        _cellRepository.Update(new Cell { Id = defaultCell.Id, X = cell.X, Y = cell.Y, CellStateId = cell.CellStateId });
+                        _unitOfWork.Commit();
 
                         //update positions in Position table
-                        var positionId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == defaultCell.Id).Result.Id;
+                        var position = await _positionRepository.GetAsync(x => x.CellId == defaultCell.Id);
                         var updatePosition = new Position
                         {
-                            Id = positionId,
+                            Id = position.Id,
                             ShipWrapperId = shipWrapper.Id,
                             CellId = defaultCell.Id
                         };
 
-                        _unitOfWork.PositionRepository.Update(updatePosition);
+                        _unitOfWork.ClearChangeTracker();
+                        _positionRepository.Update(updatePosition);
                         _unitOfWork.Commit();
                     }
                 }
             }
             catch (Exception ex)
             {
-                _unitOfWork.ShipWrapperRepository.Delete(shipWrapper);
-                _unitOfWork.ShipRepository.Delete(newShip);
+                _shipWrapperRepository.Delete(shipWrapper);
+                _shipRepository.Delete(newShip);
                 _unitOfWork.Commit();
                 return new CreateShipResponse { Message = ex.Message };
             }
@@ -404,20 +446,20 @@ namespace Game.BLL.Services
             return new CreateShipResponse { Message = "Create ship was successful!" };
         }
         
-        public IsPlayerReadyResponse SetPlayerReady(IsPlayerReadyRequest isPlayerReadyRequest)
+        public async Task<IsPlayerReadyResponse> SetPlayerReady(IsPlayerReadyRequest isPlayerReadyRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(isPlayerReadyRequest.Token);
-            var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
+            var player = await _appUserRepository.GetAsync(x => x.UserName == username);
 
-            var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == playerId).Result.Id;
-            var shipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId).Result;
+            var field = await _fieldRepository.GetAsync(x => x.PlayerId == player.Id);
+            var shipWrappers = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == field.Id);
 
             if (shipWrappers.Count() < 11)
             {
                 return new IsPlayerReadyResponse { Message = "Number of ships must be 10!" };
             }
 
-            var playerGame = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == playerId || x.SecondPlayerId == playerId).Result;
+            var playerGame = await _playerGameRepository.GetAsync(x => x.FirstPlayerId == player.Id || x.SecondPlayerId == player.Id);
             if (playerGame.IsReadyFirstPlayer != null)
             {
                 var newPlayerGame = new PlayerGame
@@ -431,7 +473,7 @@ namespace Game.BLL.Services
                 };
 
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.PlayerGameRepository.Update(newPlayerGame);
+                _playerGameRepository.Update(newPlayerGame);
                 _unitOfWork.Commit();
 
                 return new IsPlayerReadyResponse { Message = "The Player is ready!" };
@@ -449,19 +491,19 @@ namespace Game.BLL.Services
                 };
 
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.PlayerGameRepository.Update(newPlayerGame);
+                _playerGameRepository.Update(newPlayerGame);
                 _unitOfWork.Commit();
 
                 return new IsPlayerReadyResponse { Message = "The Player is ready!" };
             }
         }
         
-        public IsTwoPlayersReadyResponse IsTwoPlayersReady(IsTwoPlayersReadyRequest isTwoPlayersReadyRequest)
+        public async Task<IsTwoPlayersReadyResponse> IsTwoPlayersReady(IsTwoPlayersReadyRequest isTwoPlayersReadyRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(isTwoPlayersReadyRequest.Token);
-            var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
+            var player = await _appUserRepository.GetAsync(x => x.UserName == username);
             
-            var playerGame = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == playerId || x.SecondPlayerId == playerId).Result;
+            var playerGame = await _playerGameRepository.GetAsync(x => x.FirstPlayerId == player.Id || x.SecondPlayerId == player.Id);
 
             var numberOfReadyPlayers = 0;
             if (playerGame.IsReadyFirstPlayer == null && playerGame.IsReadySecondPlayer == null)
@@ -482,66 +524,66 @@ namespace Game.BLL.Services
             };
         }
         
-        public IEnumerable<CellListResponseForSecondPlayer> GetAllCellForSecondPlayer(CellListRequestForSecondPlayer cellListRequestForSecondPlayer)
+        public async Task<IEnumerable<CellListResponseForSecondPlayer>> GetAllCellForSecondPlayer(CellListRequestForSecondPlayer cellListRequestForSecondPlayer)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(cellListRequestForSecondPlayer.Token);
-            var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
+            var player = await _appUserRepository.GetAsync(x => x.UserName == username);
 
-            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(playerId).Result;
+            var secondPlayerId = await _gameServiceHelper.GetSecondPlayerId(player.Id);
 
             if (secondPlayerId == null)
             {
                 return Enumerable.Empty<CellListResponseForSecondPlayer>();
             }
 
-            var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
-            var cellList = _gameServiceHelper.GetCellList(fieldId).Result.OrderBy(x => x.Id);
+            var field = await _fieldRepository.GetAsync(x => x.PlayerId == secondPlayerId);
+            var cellList = _gameServiceHelper.GetCellList(field.Id).Result.OrderBy(x => x.Id);
 
             return cellList.Select(_mapper.Map<CellListResponseForSecondPlayer>);
         }
         
-        public ShootResponse Fire(ShootRequest shootRequest)
+        public async Task<ShootResponse> Fire(ShootRequest shootRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(shootRequest.Token);
-            var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
-            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(playerId).Result;
+            var player = await _appUserRepository.GetAsync(x => x.UserName == username);
+            var secondPlayerId = await _gameServiceHelper.GetSecondPlayerId(player.Id);
 
-            var fieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
-            var cellList = _gameServiceHelper.GetCellList(fieldId).Result;
+            var field = await _fieldRepository.GetAsync(x => x.PlayerId == secondPlayerId);
+            var cellList = await _gameServiceHelper.GetCellList(field.Id);
 
             var myCell = cellList.Where(x => x.X == shootRequest.X && x.Y == shootRequest.Y).FirstOrDefault();
 
             if (myCell.CellStateId == 1 || myCell.CellStateId == 5)
             {
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.CellRepository.Update(_gameServiceHelper.CreateNewCell(myCell.Id, myCell.X, myCell.Y, myCell.CellStateId, false));
+                _cellRepository.Update(_gameServiceHelper.CreateNewCell(myCell.Id, myCell.X, myCell.Y, myCell.CellStateId, false));
                 _unitOfWork.Commit();
 
-                var appUser = _unitOfWork.AppUserRepository.GetAsync(x => x.Id == playerId).Result;
+                var appUser = await _appUserRepository.GetAsync(x => x.Id == player.Id);
                 var newAppUser = _gameServiceHelper.CreateNewAppUser(appUser, false);
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.AppUserRepository.Update(newAppUser);
+                _appUserRepository.Update(newAppUser);
                 _unitOfWork.Commit();
 
-                var secondAppUser = _unitOfWork.AppUserRepository.GetAsync(x => x.Id == secondPlayerId).Result;
+                var secondAppUser = await _appUserRepository.GetAsync(x => x.Id == secondPlayerId);
                 var newSecondAppUser = _gameServiceHelper.CreateNewAppUser(secondAppUser, true);
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.AppUserRepository.Update(newSecondAppUser);
+                _appUserRepository.Update(newSecondAppUser);
                 _unitOfWork.Commit();
 
                 return new ShootResponse { Message = "Missed the fire!" };
             }
             else
             {
-                var shipWrapperId = _unitOfWork.PositionRepository.GetAsync(x => x.CellId == myCell.Id).Result.ShipWrapperId;
-                var positionsByShipWrapperId = _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperId).Result;
-                var cellsByCellIds = positionsByShipWrapperId.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result);
+                var position = await _positionRepository.GetAsync(x => x.CellId == myCell.Id);
+                var positionsByShipWrapperId = await _positionRepository.GetAllAsync(x => x.ShipWrapperId == position.ShipWrapperId);
+                var cellsByCellIds = positionsByShipWrapperId.Select(position => _cellRepository.GetAsync(position.CellId).Result);
                 var isDestroyed = cellsByCellIds.Count(x => x.CellStateId == 2) <= 1;
 
                 var newCell = _gameServiceHelper.CreateNewCell(myCell.Id, myCell.X, myCell.Y, myCell.CellStateId, false);
 
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.CellRepository.Update(newCell);
+                _cellRepository.Update(newCell);
                 _unitOfWork.Commit();
 
                 if (isDestroyed)
@@ -551,7 +593,7 @@ namespace Game.BLL.Services
                         var newCellByCellId = _gameServiceHelper.CreateNewCell(cellByCellId.Id, cellByCellId.X, cellByCellId.Y, cellByCellId.CellStateId, isDestroyed);
 
                         _unitOfWork.ClearChangeTracker();
-                        _unitOfWork.CellRepository.Update(newCellByCellId);
+                        _cellRepository.Update(newCellByCellId);
                         _unitOfWork.Commit();
                     }
 
@@ -561,134 +603,133 @@ namespace Game.BLL.Services
             }
         }
         
-        public HitResponse GetPriority(HitRequest hitRequest)
+        public async Task<HitResponse> GetPriority(HitRequest hitRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(hitRequest.Token);
-            var playerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
-            var player = _unitOfWork.AppUserRepository.GetAsync(playerId).Result;
+            var player = await _appUserRepository.GetAsync(x => x.UserName == username);
 
             return new HitResponse { IsHit = player.IsHit };
         }
         //TODO: Need to speed up
-        public IsEndOfTheGameResponse IsEndOfTheGame(IsEndOfTheGameRequest isEndOfTheGameRequest)
+        public async Task<IsEndOfTheGameResponse> IsEndOfTheGame(IsEndOfTheGameRequest isEndOfTheGameRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(isEndOfTheGameRequest.Token);
-            var firstPlayerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
-            var firstFieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == firstPlayerId).Result.Id;
-            var firstCellList = _gameServiceHelper.GetCellList(firstFieldId).Result;
+            var firstPlayer = await _appUserRepository.GetAsync(x => x.UserName == username);
+            var firstField = await _fieldRepository.GetAsync(x => x.PlayerId == firstPlayer.Id);
+            var firstCellList = await _gameServiceHelper.GetCellList(firstField.Id);
 
-            var gameId = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == firstPlayerId || x.SecondPlayerId == firstPlayerId).Result.GameId;
+            var playerGame = await _playerGameRepository.GetAsync(x => x.FirstPlayerId == firstPlayer.Id || x.SecondPlayerId == firstPlayer.Id);
 
-            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(firstPlayerId).Result;
+            var secondPlayerId = await _gameServiceHelper.GetSecondPlayerId(firstPlayer.Id);
             if (secondPlayerId == null)
             {
                 return new IsEndOfTheGameResponse { IsEndOfTheGame = false, WinnerUserName = "" };
             }
-            var secondFieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
-            var secondCellList = _gameServiceHelper.GetCellList(secondFieldId).Result;
+            var secondField = await _fieldRepository.GetAsync(x => x.PlayerId == secondPlayerId);
+            var secondCellList = await _gameServiceHelper.GetCellList(secondField.Id);
 
-            var gameStateId = _unitOfWork.GameRepository.GetAsync(gameId).Result.GameStateId;
-            var firstCellsWithStateBusyOrHit = _gameServiceHelper.CheckIsCellsWithStateBusyOrHit(firstCellList, gameStateId);
-            var secondCellsWithStateBusyOrHit = _gameServiceHelper.CheckIsCellsWithStateBusyOrHit(secondCellList, gameStateId);
+            var gameState = await _gameRepository.GetAsync(playerGame.GameId);
+            var firstCellsWithStateBusyOrHit = _gameServiceHelper.CheckIsCellsWithStateBusyOrHit(firstCellList, gameState.GameStateId);
+            var secondCellsWithStateBusyOrHit = _gameServiceHelper.CheckIsCellsWithStateBusyOrHit(secondCellList, gameState.GameStateId);
 
-            if (secondCellsWithStateBusyOrHit && firstCellsWithStateBusyOrHit && _unitOfWork.GameRepository.GetAsync(gameId).Result.GameStateId == 2)
+            if (secondCellsWithStateBusyOrHit && firstCellsWithStateBusyOrHit && _gameRepository.GetAsync(playerGame.GameId).Result.GameStateId == 2)
             {
                 return new IsEndOfTheGameResponse { IsEndOfTheGame = false, WinnerUserName = "" };
             }
 
-            var game = _unitOfWork.GameRepository.GetAsync(gameId).Result;
+            var game = await _gameRepository.GetAsync(playerGame.GameId);
             var newGame = new DAL.Models.Game { Id = game.Id, GameStateId = 3 };
 
             if (!firstCellsWithStateBusyOrHit)
             {
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.GameRepository.Update(newGame);
+                _gameRepository.Update(newGame);
                 _unitOfWork.Commit();
 
-                if (_unitOfWork.GameHistoryRepository.GetAsync(x => x.GameId == gameId).Result == null)
+                if (_gameHistoryRepository.GetAsync(x => x.GameId == game.Id).Result == null)
                 {
-                    _unitOfWork.GameHistoryRepository.Create(new GameHistory
+                    await _gameHistoryRepository.Create(new GameHistory
                     {
-                        GameId = gameId,
-                        FirstPlayerName = _unitOfWork.AppUserRepository.GetAsync(firstPlayerId).Result.UserName,
-                        SecondPlayerName = _unitOfWork.AppUserRepository.GetAsync(secondPlayerId).Result.UserName,
-                        GameStateName = _unitOfWork.GameStateRepository.GetAsync(newGame.GameStateId).Result.GameStateName,
-                        WinnerName = _unitOfWork.AppUserRepository.GetAsync(secondPlayerId).Result.UserName
+                        GameId = game.Id,
+                        FirstPlayerName = _appUserRepository.GetAsync(firstPlayer.Id).Result.UserName,
+                        SecondPlayerName = _appUserRepository.GetAsync(secondPlayerId).Result.UserName,
+                        GameStateName = _gameStateRepository.GetAsync(newGame.GameStateId).Result.GameStateName,
+                        WinnerName = _appUserRepository.GetAsync(secondPlayerId).Result.UserName
                     });
                     _unitOfWork.Commit();
                 }
 
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.GameRepository.Update(newGame);
+                _gameRepository.Update(newGame);
                 _unitOfWork.Commit();
 
-                return new IsEndOfTheGameResponse { IsEndOfTheGame = true, WinnerUserName = _unitOfWork.AppUserRepository.GetAsync(secondPlayerId).Result.UserName };
+                return new IsEndOfTheGameResponse { IsEndOfTheGame = true, WinnerUserName = _appUserRepository.GetAsync(secondPlayerId).Result.UserName };
             }
 
             else if (!secondCellsWithStateBusyOrHit)
             {
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.GameRepository.Update(newGame);
+                _gameRepository.Update(newGame);
                 _unitOfWork.Commit();
 
-                if (_unitOfWork.GameHistoryRepository.GetAsync(x => x.GameId == gameId).Result == null)
+                if (_gameHistoryRepository.GetAsync(x => x.GameId == game.Id).Result == null)
                 {
-                    _unitOfWork.GameHistoryRepository.Create(new GameHistory
+                    await _gameHistoryRepository.Create(new GameHistory
                     {
-                        GameId = gameId,
-                        FirstPlayerName = _unitOfWork.AppUserRepository.GetAsync(firstPlayerId).Result.UserName,
-                        SecondPlayerName = _unitOfWork.AppUserRepository.GetAsync(secondPlayerId).Result.UserName,
-                        GameStateName = _unitOfWork.GameStateRepository.GetAsync(newGame.GameStateId).Result.GameStateName,
-                        WinnerName = _unitOfWork.AppUserRepository.GetAsync(firstPlayerId).Result.UserName
+                        GameId = game.Id,
+                        FirstPlayerName = _appUserRepository.GetAsync(firstPlayer.Id).Result.UserName,
+                        SecondPlayerName = _appUserRepository.GetAsync(secondPlayerId).Result.UserName,
+                        GameStateName = _gameStateRepository.GetAsync(newGame.GameStateId).Result.GameStateName,
+                        WinnerName = _appUserRepository.GetAsync(firstPlayer.Id).Result.UserName
                     });
                     _unitOfWork.Commit();
                 }
 
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.GameRepository.Update(newGame);
+                _gameRepository.Update(newGame);
                 _unitOfWork.Commit();
                 return new IsEndOfTheGameResponse { IsEndOfTheGame = true, WinnerUserName = username };
             }
             return new IsEndOfTheGameResponse { IsEndOfTheGame = false, WinnerUserName = "" };
         }
 
-        public ClearingDBResponse ClearingDB(ClearingDBRequest clearingDBRequest)
+        public async Task<ClearingDBResponse> ClearingDB(ClearingDBRequest clearingDBRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(clearingDBRequest.Token);
-            var firstPlayerId = _unitOfWork.AppUserRepository.GetAsync(x => x.UserName == username).Result.Id;
-            var secondPlayerId = _gameServiceHelper.GetSecondPlayerId(firstPlayerId).Result;
+            var firstPlayer = await _appUserRepository.GetAsync(x => x.UserName == username);
+            var secondPlayerId = await _gameServiceHelper.GetSecondPlayerId(firstPlayer.Id);
 
-            var firstFieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == firstPlayerId).Result.Id;
-            var firstCellList = _gameServiceHelper.GetCellList(firstFieldId).Result;
-            var firstShipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == firstFieldId).Result;
-            var firstShips = _gameServiceHelper.GetShipList(firstFieldId).Result;
+            var firstField = await _fieldRepository.GetAsync(x => x.PlayerId == firstPlayer.Id);
+            var firstCellList = await _gameServiceHelper.GetCellList(firstField.Id);
+            var firstShipWrappers = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == firstField.Id);
+            var firstShips = await _gameServiceHelper.GetShipList(firstField.Id);
 
-            var secondFieldId = _unitOfWork.FieldRepository.GetAsync(x => x.PlayerId == secondPlayerId).Result.Id;
-            var secondCellList = _gameServiceHelper.GetCellList(secondFieldId).Result;
-            var secondShipWrappers = _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == secondFieldId).Result;
-            var secondShips = _gameServiceHelper.GetShipList(secondFieldId).Result;
+            var secondField = await _fieldRepository.GetAsync(x => x.PlayerId == secondPlayerId);
+            var secondCellList = await _gameServiceHelper.GetCellList(secondField.Id);
+            var secondShipWrappers = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == secondField.Id);
+            var secondShips = await _gameServiceHelper.GetShipList(secondField.Id);
 
             if (secondCellList.Any())
             {
                 //delete all cells
-                _unitOfWork.CellRepository.DeleteRange(firstCellList);
+                _cellRepository.DeleteRange(firstCellList);
                 _unitOfWork.Commit();
 
                 //delete all ships
-                _unitOfWork.ShipRepository.DeleteRange(firstShips);
+                _shipRepository.DeleteRange(firstShips);
                 _unitOfWork.Commit();
 
                 //update table AppUser(cleanup column IsHit)
-                var firstAppUser = _unitOfWork.AppUserRepository.GetAsync(firstPlayerId).Result;
+                var firstAppUser = await _appUserRepository.GetAsync(firstPlayer.Id);
                 var newFirstAppUser = _gameServiceHelper.CreateNewAppUser(firstAppUser, null);
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.AppUserRepository.Update(newFirstAppUser);
+                _appUserRepository.Update(newFirstAppUser);
                 _unitOfWork.Commit();
 
-                var secondAppUser = _unitOfWork.AppUserRepository.GetAsync(secondPlayerId).Result;
+                var secondAppUser = await _appUserRepository.GetAsync(secondPlayerId);
                 var newSecondAppUser = _gameServiceHelper.CreateNewAppUser(secondAppUser, null);
                 _unitOfWork.ClearChangeTracker();
-                _unitOfWork.AppUserRepository.Update(newSecondAppUser);
+                _appUserRepository.Update(newSecondAppUser);
                 _unitOfWork.Commit();   
 
                 return new ClearingDBResponse { Message = "The database cleanup was successfull!" };
@@ -696,35 +737,35 @@ namespace Game.BLL.Services
             else
             {
                 //delete all cells
-                _unitOfWork.CellRepository.DeleteRange(firstCellList);
+                _cellRepository.DeleteRange(firstCellList);
                 _unitOfWork.Commit();
 
                 //delete all ships
-                _unitOfWork.ShipRepository.DeleteRange(firstShips);
+                _shipRepository.DeleteRange(firstShips);
                 _unitOfWork.Commit();
 
                 //delete all shipWrappers
-                _unitOfWork.ShipWrapperRepository.DeleteRange(firstShipWrappers);
+                _shipWrapperRepository.DeleteRange(firstShipWrappers);
                 _unitOfWork.Commit();
 
                 //delete all shipWrappers
-                _unitOfWork.ShipWrapperRepository.DeleteRange(secondShipWrappers);
+                _shipWrapperRepository.DeleteRange(secondShipWrappers);
                 _unitOfWork.Commit();
 
                 //delete game form table Game
-                var gameId = _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == firstPlayerId && x.SecondPlayerId == secondPlayerId).Result.GameId;
-                var game = _unitOfWork.GameRepository.GetAsync(gameId).Result;
-                _unitOfWork.GameRepository.Delete(game);
+                var playerGame = await _playerGameRepository.GetAsync(x => x.FirstPlayerId == firstPlayer.Id && x.SecondPlayerId == secondPlayerId);
+                var game = _gameRepository.GetAsync(playerGame.GameId).Result;
+                _gameRepository.Delete(game);
                 _unitOfWork.Commit();
 
                 //delete field from table Field
-                var field = _unitOfWork.FieldRepository.GetAsync(firstFieldId).Result; 
-                _unitOfWork.FieldRepository.Delete(field);
+                var field = _fieldRepository.GetAsync(firstField.Id).Result; 
+                _fieldRepository.Delete(field);
                 _unitOfWork.Commit();
 
                 //delete field from table Field
-                var secondField = _unitOfWork.FieldRepository.GetAsync(secondFieldId).Result;
-                _unitOfWork.FieldRepository.Delete(secondField);
+                var secondFieldDeleted = await _fieldRepository.GetAsync(secondField.Id);
+                _fieldRepository.Delete(secondFieldDeleted);
                 _unitOfWork.Commit();
 
                 return new ClearingDBResponse { Message = "The database cleanup was successfull!" };

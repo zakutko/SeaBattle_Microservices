@@ -15,7 +15,7 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<ShootRequest> context)
         {
-            var result = _gameService.Fire(context.Message);
+            var result = await _gameService.Fire(context.Message);
 
             await context.RespondAsync(result);
         }

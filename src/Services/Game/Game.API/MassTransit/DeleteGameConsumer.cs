@@ -17,7 +17,7 @@ namespace Game.API.MassTransit
         {
             try
             {
-                _gameService.DeleteGame(context.Message);
+                await _gameService.DeleteGame(context.Message);
                 await context.RespondAsync(new DeleteGameResponse { Message = "Delete game was successful!" });
             }
             catch

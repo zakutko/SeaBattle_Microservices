@@ -15,7 +15,7 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<HitRequest> context)
         {
-            var result = _gameService.GetPriority(context.Message);
+            var result = await _gameService.GetPriority(context.Message);
 
             await context.RespondAsync(result);
         }

@@ -16,7 +16,7 @@ namespace Game.API.MassTransit
 
         public async Task Consume(ConsumeContext<CellListRequest> context)
         {
-            var result = _gameService.GetAllCells(context.Message);
+            var result = await _gameService.GetAllCells(context.Message);
             var cellList = new CellListResponseList { CellListResponses = result };
 
             await context.RespondAsync(cellList);

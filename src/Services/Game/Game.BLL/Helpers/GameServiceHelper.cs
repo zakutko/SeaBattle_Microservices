@@ -2,17 +2,31 @@
 using Game.DAL.Interfaces;
 using Game.DAL.Models;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 
 namespace Game.BLL.Helpers
 {
     public class GameServiceHelper : IGameServiceHelper
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IRepository<PlayerGame> _playerGameRepository;
+        private readonly IRepository<ShipWrapper> _shipWrapperRepository;
+        private readonly IRepository<Ship> _shipRepository;
+        private readonly IRepository<Position> _positionRepository;
+        private readonly IRepository<Cell> _cellRepository;
 
-        public GameServiceHelper(IUnitOfWork unitOfWork)
+        public GameServiceHelper(IUnitOfWork unitOfWork,
+            IRepository<PlayerGame> playerGameRepository,
+            IRepository<ShipWrapper> shipWrapperRepository,
+            IRepository<Ship> shipRepository,
+            IRepository<Position> positionRepository,
+            IRepository<Cell> cellRepository)
         {
             _unitOfWork = unitOfWork;
+            _playerGameRepository = playerGameRepository;
+            _shipWrapperRepository = shipWrapperRepository;
+            _shipRepository = shipRepository;
+            _positionRepository = positionRepository;
+            _cellRepository = cellRepository;
         }
 
         public IEnumerable<Cell> SetDafaultCells()
@@ -101,26 +115,26 @@ namespace Game.BLL.Helpers
 
         public async Task<IEnumerable<Cell>> GetCellList(int fieldId)
         {
-            var shipWrappers = await _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId);
+            var shipWrappers = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId);
 
             var positions = new List<Position>();
             foreach(var shipWrapper in shipWrappers)
             {
-                positions.AddRange(await _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapper.Id));
+                positions.AddRange(await _positionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapper.Id));
             }
 
-            return positions.Select(position => _unitOfWork.CellRepository.GetAsync(position.CellId).Result);
+            return positions.Select(position => _cellRepository.GetAsync(position.CellId).Result);
         }
 
         public async Task<IEnumerable<Ship>> GetShipList(int fieldId)
         {
-            var shipWrappers = await _unitOfWork.ShipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null);
-            return shipWrappers.Select(shipWrapper => _unitOfWork.ShipRepository.GetAsync(x => x.Id == shipWrapper.ShipId).Result);
+            var shipWrappers = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null);
+            return shipWrappers.Select(shipWrapper => _shipRepository.GetAsync(x => x.Id == shipWrapper.ShipId).Result);
         }
 
         public async Task<string> GetSecondPlayerId(string playerId)
         {
-            var playerGame = await _unitOfWork.PlayerGameRepository.GetAsync(x => x.FirstPlayerId == playerId || x.SecondPlayerId == playerId);
+            var playerGame = await _playerGameRepository.GetAsync(x => x.FirstPlayerId == playerId || x.SecondPlayerId == playerId);
             var secondPlayerId = playerGame.FirstPlayerId;
             if (playerGame.FirstPlayerId == playerId)
             {
@@ -134,9 +148,9 @@ namespace Game.BLL.Helpers
         {
             var cellListResult = new List<Cell>();
 
-            var shipWrapperDefault = await _unitOfWork.ShipWrapperRepository.GetAsync(x => x.FieldId == fieldId && x.ShipId == null);
-            var positionsDefault = await _unitOfWork.PositionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperDefault.Id);
-            var allCellsWithStateNoEmpty = positionsDefault.Select(x => _unitOfWork.CellRepository.GetAsync(x.CellId).Result)
+            var shipWrapperDefault = await _shipWrapperRepository.GetAsync(x => x.FieldId == fieldId && x.ShipId == null);
+            var positionsDefault = await _positionRepository.GetAllAsync(x => x.ShipWrapperId == shipWrapperDefault.Id);
+            var allCellsWithStateNoEmpty = positionsDefault.Select(x => _cellRepository.GetAsync(x.CellId).Result)
                 .Where(x => x.CellStateId == 2 || x.CellStateId == 5);
 
             switch (shipDirectionName)
