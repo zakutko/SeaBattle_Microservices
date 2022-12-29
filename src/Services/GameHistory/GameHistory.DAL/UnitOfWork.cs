@@ -5,20 +5,12 @@ namespace GameHistory.DAL
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly IRepository<Models.GameHistory> _gameHistoryRepository;
         private readonly DataContext _dataContext;
 
-        public UnitOfWork(IRepository<Models.GameHistory> gameHistoryRepository, DataContext dataContext)
+        public UnitOfWork(DataContext dataContext)
         {
-            _gameHistoryRepository = gameHistoryRepository;
             _dataContext = dataContext;
         }
-
-        public IRepository<Models.GameHistory> GameHistoryRepository
-        {
-            get { return _gameHistoryRepository; }
-        }
-
         public void Commit()
         {
             _dataContext.SaveChanges();

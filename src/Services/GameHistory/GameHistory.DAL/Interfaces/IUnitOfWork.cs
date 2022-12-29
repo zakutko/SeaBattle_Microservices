@@ -2,7 +2,6 @@
 {
     public interface IUnitOfWork
     {
-        IRepository<Models.GameHistory> GameHistoryRepository { get; }
         void Commit();
         void Rollback();
         Task CommitAsync();

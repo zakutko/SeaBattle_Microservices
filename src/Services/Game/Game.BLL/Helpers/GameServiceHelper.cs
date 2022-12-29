@@ -7,21 +7,19 @@ namespace Game.BLL.Helpers
 {
     public class GameServiceHelper : IGameServiceHelper
     {
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IRepository<PlayerGame> _playerGameRepository;
         private readonly IRepository<ShipWrapper> _shipWrapperRepository;
         private readonly IRepository<Ship> _shipRepository;
         private readonly IRepository<Position> _positionRepository;
         private readonly IRepository<Cell> _cellRepository;
 
-        public GameServiceHelper(IUnitOfWork unitOfWork,
+        public GameServiceHelper(
             IRepository<PlayerGame> playerGameRepository,
             IRepository<ShipWrapper> shipWrapperRepository,
             IRepository<Ship> shipRepository,
             IRepository<Position> positionRepository,
             IRepository<Cell> cellRepository)
         {
-            _unitOfWork = unitOfWork;
             _playerGameRepository = playerGameRepository;
             _shipWrapperRepository = shipWrapperRepository;
             _shipRepository = shipRepository;

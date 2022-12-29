@@ -610,7 +610,7 @@ namespace Game.BLL.Services
 
             return new HitResponse { IsHit = player.IsHit };
         }
-        //TODO: Need to speed up
+
         public async Task<IsEndOfTheGameResponse> IsEndOfTheGame(IsEndOfTheGameRequest isEndOfTheGameRequest)
         {
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(isEndOfTheGameRequest.Token);

@@ -7,24 +7,24 @@ namespace GameHistory.BLL.Services
 {
     public class GameHistoryService : IGameHistoryService
     {
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IRepository<DAL.Models.GameHistory> _gameHistoryRepository;
 
-        public GameHistoryService(IUnitOfWork unitOfWork, IMapper mapper)
+        public GameHistoryService(IMapper mapper, IRepository<DAL.Models.GameHistory> gameHistoryRepository)
         {
-            _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _gameHistoryRepository = gameHistoryRepository;
         }
 
         public IEnumerable<GameHistoryResponse> GetAllGameHistories(GameHistoryRequest gameHistoryRequest)
         {
-            var gameHistoryList = _unitOfWork.GameHistoryRepository.GetAllAsync().Result.Reverse();
-            return (gameHistoryList.Select(gameHistory => _mapper.Map<GameHistoryResponse>(gameHistory))).ToList();
+            var gameHistoryList = _gameHistoryRepository.GetAllAsync().Result.Reverse();
+            return gameHistoryList.Select(_mapper.Map<GameHistoryResponse>).ToList();
         }
 
         public TopPlayersResponse GetTopPlayers(TopPlayersRequest topPlayersRequest)
         {
-            var gameHistoryList = _unitOfWork.GameHistoryRepository.GetAllAsync().Result;
+            var gameHistoryList = _gameHistoryRepository.GetAllAsync().Result;
             
             var result = GetAllGameHistorySortedByDescOrderOfOccurrenceInTheTable(gameHistoryList);
 
