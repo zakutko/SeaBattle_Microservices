@@ -86,23 +86,17 @@ namespace Game.BLL.Services
             if (numberOfShipsOnField == 0)
             {
                 var defaultCells = _gameServiceHelper.SetDafaultCells();
-                foreach (var cell in defaultCells)
-                {
-                    _unitOfWork.ClearChangeTracker();
-                    _unitOfWork.CellRepository.Update(cell);
-                    _unitOfWork.Commit();
-                }
+                _unitOfWork.ClearChangeTracker();
+                _unitOfWork.CellRepository.UpdateRange(defaultCells);
+                _unitOfWork.Commit();
 
                 var defaultShipWrapper = new ShipWrapper { FieldId = fieldId };
                 _unitOfWork.ShipWrapperRepository.Create(defaultShipWrapper);
                 _unitOfWork.Commit();
 
                 var defaultPositions = defaultCells.Select(cell => new Position { ShipWrapperId = defaultShipWrapper.Id, CellId = cell.Id });
-                foreach (var position in defaultPositions)
-                {
-                    _unitOfWork.PositionRepository.Create(position);
-                    _unitOfWork.Commit();
-                }
+                _unitOfWork.PositionRepository.CreateRange(defaultPositions);
+                _unitOfWork.Commit();
             }
         }
 
@@ -273,24 +267,17 @@ namespace Game.BLL.Services
             if (numberOfShipsOnField == 0)
             {
                 var defaultCells = _gameServiceHelper.SetDafaultCells();
-                foreach (var cell in defaultCells)
-                {
-                    _unitOfWork.ClearChangeTracker();
-                    _unitOfWork.CellRepository.Update(cell);
-                    _unitOfWork.Commit();
-                }
+                _unitOfWork.ClearChangeTracker();
+                _unitOfWork.CellRepository.UpdateRange(defaultCells);
+                _unitOfWork.Commit();
 
                 var defaultShipWrapper = new ShipWrapper { FieldId = fieldId };
                 _unitOfWork.ShipWrapperRepository.Create(defaultShipWrapper);
                 _unitOfWork.Commit();
 
                 var defaultPositions = (defaultCells.Select(cell => new Position { ShipWrapperId = defaultShipWrapper.Id, CellId = cell.Id })).ToList();
-
-                foreach (var position in defaultPositions)
-                {
-                    _unitOfWork.PositionRepository.Create(position);
-                    _unitOfWork.Commit();
-                }
+                _unitOfWork.PositionRepository.CreateRange(defaultPositions);
+                _unitOfWork.Commit();
             }
         }
 
@@ -567,6 +554,7 @@ namespace Game.BLL.Services
                         _unitOfWork.CellRepository.Update(newCellByCellId);
                         _unitOfWork.Commit();
                     }
+
                     return new ShootResponse { Message = "The ship is destroyed!" };
                 }
                 return new ShootResponse { Message = "The ship is hit!" };
@@ -581,7 +569,6 @@ namespace Game.BLL.Services
 
             return new HitResponse { IsHit = player.IsHit };
         }
-        
         //TODO: Need to speed up
         public IsEndOfTheGameResponse IsEndOfTheGame(IsEndOfTheGameRequest isEndOfTheGameRequest)
         {
@@ -731,7 +718,7 @@ namespace Game.BLL.Services
                 _unitOfWork.Commit();
 
                 //delete field from table Field
-                var field = _unitOfWork.FieldRepository.GetAsync(firstFieldId).Result;
+                var field = _unitOfWork.FieldRepository.GetAsync(firstFieldId).Result; 
                 _unitOfWork.FieldRepository.Delete(field);
                 _unitOfWork.Commit();
 
