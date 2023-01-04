@@ -58,7 +58,7 @@ namespace Game.BLL.Services
             _gameHistoryRepository = gameHistoryRepository;
         }
 
-        public async Task<IEnumerable<GameListResponse>> GetAllGames(GameListRequest gameListRequest)
+        public async Task<List<GameListResponse>> GetAllGames(GameListRequest gameListRequest)
         {
             var playerGameList = await _playerGameRepository.GetAllAsync();
 
@@ -89,7 +89,7 @@ namespace Game.BLL.Services
 
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(gameListRequest.Token);
 
-            var playerGameResponseListWithoutCurrUser = playerGameResponseList.Where(playerGame => playerGame.FirstPlayer != username && playerGame.SecondPlayer != username);
+            var playerGameResponseListWithoutCurrUser = playerGameResponseList.Where(playerGame => playerGame.FirstPlayer != username && playerGame.SecondPlayer != username).ToList();
             return playerGameResponseListWithoutCurrUser;
         }
 
@@ -97,45 +97,52 @@ namespace Game.BLL.Services
         {
             var game = new DAL.Models.Game { GameStateId = 1 };
             await _gameRepository.Create(game);
-            _unitOfWork.Commit();
+            await _unitOfWork.CommitAsync();
             var gameId = game.Id;
 
             var username = _gameServiceHelper.GetUsernameByDecodingJwtToken(createGameRequest.Token);
             var appUser = await _appUserRepository.GetAsync(x => x.UserName == username && x.NormalizedUserName == username.ToUpper());
             var newAppUser = _gameServiceHelper.CreateNewAppUser(appUser, true);
 
+            //Update AppUser Table
             _unitOfWork.ClearChangeTracker();
             _appUserRepository.Update(newAppUser);
-            _unitOfWork.Commit();
+            await _unitOfWork.CommitAsync();
 
+            //Create object in PlayerGame Table
             var playerGame = new PlayerGame { GameId = gameId, FirstPlayerId = appUser.Id };
             await _playerGameRepository.Create(playerGame);
-            _unitOfWork.Commit();
+            await _unitOfWork.CommitAsync();
 
+            //Create field
             var field = new Field { Size = 10, PlayerId = appUser.Id };
             await _fieldRepository.Create(field);
-            _unitOfWork.Commit();
+            await _unitOfWork.CommitAsync();
             var fieldId = field.Id;
 
+            //Create GameField
             var gameField = new GameField { FirstFieldId = fieldId, GameId = gameId };
             await _gameFieldRepository.Create(gameField);
-            _unitOfWork.Commit();
+            await _unitOfWork.CommitAsync();
 
             var numberOfShipsOnField = await _shipWrapperRepository.GetAllAsync(x => x.FieldId == fieldId && x.ShipId != null);
             if (numberOfShipsOnField.Count() == 0)
             {
+                //Create default cells
                 var defaultCells = _gameServiceHelper.SetDafaultCells();
                 _unitOfWork.ClearChangeTracker();
                 _cellRepository.UpdateRange(defaultCells);
-                _unitOfWork.Commit();
+                await _unitOfWork.CommitAsync();
 
+                //Create default shipWrapper
                 var defaultShipWrapper = new ShipWrapper { FieldId = fieldId };
                 await _shipWrapperRepository.Create(defaultShipWrapper);
-                _unitOfWork.Commit();
+                await _unitOfWork.CommitAsync();
 
+                //Create default position
                 var defaultPositions = defaultCells.Select(cell => new Position { ShipWrapperId = defaultShipWrapper.Id, CellId = cell.Id });
                 await _positionRepository.CreateRange(defaultPositions);
-                _unitOfWork.Commit();
+                await _unitOfWork.CommitAsync();
             }
         }
 

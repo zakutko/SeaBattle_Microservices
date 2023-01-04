@@ -53,7 +53,7 @@ export default observer(function Game()
                 });
                 agent.Games.priopity(token).then(response =>
                 {
-                   setIsHit(response.isHit);
+                setIsHit(response.isHit);
                 });
                 agent.Games.endOfTheGame(token).then(response =>
                 {

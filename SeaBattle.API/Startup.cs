@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.OpenApi.Models;
 using SeaBattle.API.Extensions;
+using Serilog;
 
 namespace SeaBattle.API
 {
@@ -15,7 +16,6 @@ namespace SeaBattle.API
 
         public void ConfigureServices(IServiceCollection services)
         {
-
             services.AddControllers(options =>
             {
                 var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
@@ -31,7 +31,7 @@ namespace SeaBattle.API
             {
                 options.AddPolicy("CorsPolicy", policy =>
                 {
-                    policy.AllowAnyMethod().AllowAnyHeader().WithOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:3002");
+                    policy.AllowAnyMethod().AllowAnyHeader().WithOrigins("http://localhost:3000", "http://localhost:3001");
                 });
             });
             services.AddServerServices(_configuration);
@@ -47,6 +47,7 @@ namespace SeaBattle.API
             }
 
             app.UseHttpsRedirection();
+            app.UseSerilogRequestLogging();
 
             app.UseRouting();
 

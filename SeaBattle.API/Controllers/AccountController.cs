@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SeaBattle.Contracts.Dtos;
+using Serilog;
 
 namespace SeaBattle.API.Controllers
 {
@@ -24,7 +25,6 @@ namespace SeaBattle.API.Controllers
             {
                 var request = new GetCurrUserRequest { Token = token };
                 var response = await _bus.Request<GetCurrUserRequest, UserResponse>(request);
-
                 return Ok(response.Message);
             }
             catch (Exception ex)

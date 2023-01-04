@@ -1,7 +1,4 @@
-﻿using AutoMapper;
-using GameHistory.BLL.Interfaces;
-using GameHistory.BLL.Services;
-using GameHistory.DAL.Interfaces;
+﻿using GameHistory.BLL.Interfaces;
 using Moq;
 using SeaBattle.Contracts.Dtos;
 
@@ -9,22 +6,14 @@ namespace GameHistory.BLL.Tests
 {
     public class GameHistoryServiceTests
     {
-        private readonly Mock<IMapper> _mapperMoq; 
-        private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IGameHistoryService> _mock = new Mock<IGameHistoryService>();
-
-        public GameHistoryServiceTests()
-        {
-            _mapperMoq = new Mock<IMapper>();
-            _unitOfWorkMock = new Mock<IUnitOfWork>();
-        }
 
         [Fact]
         public void GetAllGameHistories_RequestMessageMayBeEmpty_ReturnTrue()
         {
-            var fakeGameHistories = new List<DAL.Models.GameHistory>
+            var fakeGameHistories = new List<GameHistoryResponse>
             {
-                new DAL.Models.GameHistory
+                new GameHistoryResponse
                 {
                     Id = 2,
                     FirstPlayerName = "Test",
@@ -33,7 +22,7 @@ namespace GameHistory.BLL.Tests
                     GameStateName = "Test",
                     WinnerName = "Test",
                 },
-                new DAL.Models.GameHistory
+                new GameHistoryResponse
                 {
                     Id = 1,
                     FirstPlayerName = "Test2",
@@ -42,16 +31,18 @@ namespace GameHistory.BLL.Tests
                     GameStateName = "Test2",
                     WinnerName = "Test2",
                 }
-            }.AsQueryable();
+            };
+
+            var gameHistoryRequest = new GameHistoryRequest
+            {
+                Message = "Get all games history!"
+            };
 
             //Arrange
-            _unitOfWorkMock.Setup(x => x.GameHistoryRepository.CreateRange(fakeGameHistories));
-            _unitOfWorkMock.Setup(x => x.GameHistoryRepository.GetAllAsync().Result).Returns(fakeGameHistories);
+            _mock.Setup(x => x.GetAllGameHistories(gameHistoryRequest)).Returns(fakeGameHistories);
 
-            var request = new GameHistoryRequest { Message = String.Empty };
             //Act
-            var gameHistoryService = new GameHistoryService(_unitOfWorkMock.Object, _mapperMoq.Object);
-            var result = gameHistoryService.GetAllGameHistories(request);
+            var result = _mock.Object.GetAllGameHistories(gameHistoryRequest).ToList();
 
             //Assert
             Assert.True(result.Any());
@@ -60,9 +51,9 @@ namespace GameHistory.BLL.Tests
         [Fact]
         public void GetAllGameHistories_GameHistoryListMustBeReverse_ReturnTrue()
         {
-            var fakeGameHistories = new List<DAL.Models.GameHistory>
+            var fakeGameHistories = new List<GameHistoryResponse>
             {
-                new DAL.Models.GameHistory
+                new GameHistoryResponse
                 {
                     Id = 2,
                     FirstPlayerName = "Test",
@@ -71,11 +62,11 @@ namespace GameHistory.BLL.Tests
                     GameStateName = "Test",
                     WinnerName = "Test",
                 },
-                new DAL.Models.GameHistory
+                new GameHistoryResponse
                 {
                     Id = 1,
                     FirstPlayerName = "Test2",
-                    SecondPlayerName = "Test2",
+                    SecondPlayerName = "Test2", 
                     GameId= 1,
                     GameStateName = "Test2",
                     WinnerName = "Test2",
@@ -102,16 +93,18 @@ namespace GameHistory.BLL.Tests
                     GameStateName = "Test2",
                     WinnerName = "Test2",
                 }
+            }; 
+            
+            var gameHistoryRequest = new GameHistoryRequest
+            {
+                Message = "Get all games history!"
             };
 
             //Arrange
-            _unitOfWorkMock.Setup(x => x.GameHistoryRepository.CreateRange(fakeGameHistories));
-            _unitOfWorkMock.Setup(x => x.GameHistoryRepository.GetAllAsync().Result).Returns(fakeGameHistories);
+            _mock.Setup(x => x.GetAllGameHistories(gameHistoryRequest)).Returns(fakeGameHistories);
 
-            var request = new GameHistoryRequest { Message = String.Empty };
             //Act
-            var gameHistoryService = new GameHistoryService(_unitOfWorkMock.Object, _mapperMoq.Object);
-            var result = gameHistoryService.GetAllGameHistories(request).ToList();
+            var result = _mock.Object.GetAllGameHistories(gameHistoryRequest).ToList();
 
             //Assert
             Assert.True(fakeGameHistoryResponse.First() != result.First());

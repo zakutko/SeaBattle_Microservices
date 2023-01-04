@@ -1,7 +1,6 @@
 ﻿using Game.BLL.Interfaces;
 using Moq;
 using SeaBattle.Contracts.Dtos;
-using System;
 
 namespace Game.BLL.Tests
 {
@@ -40,10 +39,10 @@ namespace Game.BLL.Tests
                 },
             };
 
-            mock.Setup(x => x.GetAllGames(getAllGamesRequest)).Returns(testGameListResponseList);
+            mock.Setup(x => x.GetAllGames(getAllGamesRequest).Result).Returns(testGameListResponseList);
 
             //Act
-            var result = mock.Object.GetAllGames(getAllGamesRequest);
+            var result = mock.Object.GetAllGames(getAllGamesRequest).Result;
 
             //Assert
             Assert.NotNull(result);
@@ -92,10 +91,10 @@ namespace Game.BLL.Tests
                 IsSecondPlayerConnected = true
             };
 
-            mock.Setup(x => x.IsGameOwner(isGameOwnerRequest)).Returns(testIsGameOwnerResponse);
+            mock.Setup(x => x.IsGameOwner(isGameOwnerRequest).Result).Returns(testIsGameOwnerResponse);
 
             //Act
-            var result = mock.Object.IsGameOwner(isGameOwnerRequest);
+            var result = mock.Object.IsGameOwner(isGameOwnerRequest).Result;
 
             //Assert
             Assert.Equal(testIsGameOwnerResponse, result);
@@ -224,10 +223,10 @@ namespace Game.BLL.Tests
                 }
             };
 
-            mock.Setup(x => x.GetAllCells(getAllCellsRequest)).Returns(fakeGetAllCellsResponse);
+            mock.Setup(x => x.GetAllCells(getAllCellsRequest).Result).Returns(fakeGetAllCellsResponse);
 
             //Act
-            var result = mock.Object.GetAllCells(getAllCellsRequest);
+            var result = mock.Object.GetAllCells(getAllCellsRequest).Result;
 
             //Assert
             Assert.NotEqual(notOrderByIdListResponse, result);

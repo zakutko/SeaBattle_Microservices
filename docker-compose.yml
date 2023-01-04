@@ -23,7 +23,7 @@ services:
         - rabbitmq
         - app_db
     environment: 
-        - DB_CONNECTION_STRING=Server=host.docker.internal, 1433;Database=SeaBattle_DB;User Id=serhii;Password=Sql_Passw@rd;TrustServerCertificate=True
+        - DB_CONNECTION_STRING=Server=host.docker.internal, 1433;Database=SeaBattle_DB;User Id=serhii;Password=Pj6l3gEl9!2e;TrustServerCertificate=True
 
 
   gamehistory.api:
@@ -36,7 +36,7 @@ services:
         - rabbitmq
         - app_db
     environment: 
-        - DB_CONNECTION_STRING=Server=host.docker.internal, 1433;Database=SeaBattle_DB;User Id=serhii;Password=Sql_Passw@rd;TrustServerCertificate=True
+        - DB_CONNECTION_STRING=Server=host.docker.internal, 1433;Database=SeaBattle_DB;User Id=serhii;Password=Pj6l3gEl9!2e;TrustServerCertificate=True
   
         
   identity.api:
@@ -49,7 +49,7 @@ services:
         - rabbitmq
         - app_db
     environment: 
-        - DB_CONNECTION_STRING=Server=host.docker.internal, 1433;Database=SeaBattle_DB;User Id=serhii;Password=Sql_Passw@rd;TrustServerCertificate=True
+        - DB_CONNECTION_STRING=Server=host.docker.internal, 1433;Database=SeaBattle_DB;User Id=serhii;Password=Pj6l3gEl9!2e;TrustServerCertificate=True
 
 
   rabbitmq:
@@ -69,3 +69,15 @@ services:
         - ACCEPT_EULA=Y
         - Id=serhii
         - PASSWORD=Sql_Passw@rd
+
+
+  seq:
+    container_name: Seq
+    image: datalust/seq:latest
+    environment: 
+        - ACCEPT_EULA=Y
+    ports:
+        - 5341:80
+    restart: unless-stopped
+    volumes:
+        - ./seq-data:/data

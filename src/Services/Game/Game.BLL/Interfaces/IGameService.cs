@@ -4,7 +4,7 @@ namespace Game.BLL.Interfaces
 {
     public interface IGameService
     {
-        Task<IEnumerable<GameListResponse>> GetAllGames(GameListRequest gameListRequest);
+        Task<List<GameListResponse>> GetAllGames(GameListRequest gameListRequest);
         Task CreateGame(CreateGameRequest createGameRequest);
         Task<IsGameOwnerResponse> IsGameOwner(IsGameOwnerRequest isGameOwnerRequest);
         Task DeleteGame(DeleteGameRequest deleteGameRequest);
